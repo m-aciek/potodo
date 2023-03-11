@@ -21,14 +21,14 @@ from potodo.po_file import PoFileStats
 
 
 def print_dir_stats(
-    directory_name: str,
+    directory: Path,
     buffer: Sequence[str],
     folder_stats: Dict[str, int],
     printed_list: Sequence[bool],
 ) -> None:
     """This function prints the directory name, its stats and the buffer"""
     if True in printed_list:
-        logging.debug("Printing directory %s", directory_name)
+        logging.debug("Printing directory %s", directory)
         # If at least one of the files isn't done then print the
         # folder stats and file(s) Each time a file is went over True
         # or False is placed in the printed_list list.  If False is
@@ -36,13 +36,13 @@ def print_dir_stats(
 
         folder_completion = 100 * folder_stats["translated"] / folder_stats["total"]
 
-        print(f"\n\n# {directory_name} ({folder_completion:.2f}% done)\n")
+        print(f"\n\n# {directory.name} ({folder_completion:.2f}% done)\n")
         print("\n".join(buffer))
-    logging.debug("Not printing directory %s", directory_name)
+    logging.debug("Not printing directory %s", directory)
 
 
 def add_dir_stats(
-    directory_name: str,
+    directory: Path,
     buffer: List[Dict[str, str]],
     folder_stats: Dict[str, int],
     printed_list: Sequence[bool],
@@ -53,7 +53,7 @@ def add_dir_stats(
         folder_completion = 100 * folder_stats["translated"] / folder_stats["total"]
         all_stats.append(
             dict(
-                name=f"{directory_name}/",
+                name=f"{directory.name}/",
                 percent_translated=float(f"{folder_completion:.2f}"),
                 files=buffer,
             )
@@ -89,7 +89,7 @@ def non_interactive_output(
     total_translated: int = 0
     total_entries: int = 0
     po_files_and_dirs = get_po_stats_from_repo_or_cache(path, ignore_matches, no_cache)
-    for directory_name, po_files in sorted(po_files_and_dirs.items()):
+    for directory, po_files in sorted(po_files_and_dirs.items()):
         # For each directory and files in this directory
         buffer: List[Any] = []
         folder_stats: Dict[str, int] = {"translated": 0, "total": 0}
@@ -120,9 +120,9 @@ def non_interactive_output(
         # or store them into a dict to print them once all directories have
         # been processed.
         if json_format:
-            add_dir_stats(directory_name, buffer, folder_stats, printed_list, dir_stats)
+            add_dir_stats(directory, buffer, folder_stats, printed_list, dir_stats)
         else:
-            print_dir_stats(directory_name, buffer, folder_stats, printed_list)
+            print_dir_stats(directory, buffer, folder_stats, printed_list)
 
         total_translated += folder_stats["translated"]
         total_entries += folder_stats["total"]

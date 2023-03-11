@@ -92,13 +92,13 @@ class PODirectory:
             file for file in self.path.rglob("*.po") if self.filter_function(str(file))
         ]
 
-    def files_by_directory(self) -> Dict[str, Set[Path]]:
+    def files_by_directory(self) -> Dict[Path, Set[Path]]:
         return {
             name: set(files)
             # We assume the output of rglob to be sorted,
             # so each 'name' is unique within groupby
             for name, files in itertools.groupby(
-                self.find_all_files(), key=lambda path: path.parent.name
+                self.find_all_files(), key=lambda path: path.parent
             )
         }
 
@@ -107,7 +107,7 @@ def get_po_stats_from_repo_or_cache(
     repo_path: Path,
     ignore_matches: Callable[[str], bool],
     no_cache: bool = False,
-) -> Mapping[str, List[PoFileStats]]:
+) -> Mapping[Path, List[PoFileStats]]:
     """Gets all the po files recursively from 'repo_path'
     and cache if no_cache is set to False, excluding those if ignore_matches match them.
     Return a dict with all directories and PoFile instances of
@@ -122,7 +122,7 @@ def get_po_stats_from_repo_or_cache(
     if no_cache:
         # Turn paths into stat objects
         logging.debug("Creating PoFileStats objects for each file without cache")
-        po_stats_per_directory: Dict[str, List[PoFileStats]] = {
+        po_stats_per_directory: Dict[Path, List[PoFileStats]] = {
             directory: [PoFileStats(po_file) for po_file in po_files]
             for directory, po_files in po_files_per_directory.items()
         }
