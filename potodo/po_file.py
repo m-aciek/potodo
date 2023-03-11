@@ -2,7 +2,9 @@ import itertools
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Optional
+import pickle
+from tempfile import NamedTemporaryFile
+from typing import Callable, Optional, cast
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -10,6 +12,8 @@ from typing import Sequence
 from typing import Set
 
 import polib
+
+from potodo import __version__ as VERSION
 
 
 class PoFileStats:
@@ -63,10 +67,6 @@ class PoFileStats:
         return self.filename < other.filename
 
 
-from potodo.cache import get_cache_file_content  # noqa
-from potodo.cache import set_cache_content  # noqa
-
-
 class PoDirectoryStats:
     """Represents a hierarchy of `.po` files."""
 
@@ -81,6 +81,9 @@ class PoDirectoryStats:
         if filter_function is None:
             filter_function = self.allow_all
         self.filter_function = filter_function
+        # self.cache is an in-memory cache, which can be optionally persisted on disk
+        # using `.write_cache()` and `.read_cache()
+        self.cache: Dict[Path, PoFileStats] = {}
 
     @staticmethod
     def allow_all(path: str) -> bool:
@@ -105,11 +108,51 @@ class PoDirectoryStats:
             )
         }
 
+    def stats_for_file(self, path: Path) -> PoFileStats:
+        """Get a PoFileStats for a given Path."""
+        if path in self.cache:
+            return self.cache[path]
+        return PoFileStats(path)
+
     def stats_by_directory(self) -> Dict[Path, List[PoFileStats]]:
         return {
-            directory: [PoFileStats(po_file) for po_file in po_files]
+            directory: [self.stats_for_file(po_file) for po_file in po_files]
             for directory, po_files in self.files_by_directory().items()
         }
+
+    def read_cache(
+        self,
+        cache_path: Path = Path(".potodo/cache.pickle"),
+    ) -> None:
+        """Restore all PoFileStats from disk.
+
+        While reading the cache, outdated entires are **not** loaded.
+        """
+        logging.debug("Trying to load cache from %s", cache_path)
+        try:
+            with open(cache_path, "rb") as handle:
+                data = pickle.load(handle)
+        except FileNotFoundError:
+            logging.warning("No cache found")
+            return
+        logging.debug("Found cache")
+        if data.get("version") != VERSION:
+            logging.info("Found old cache, ignored it.")
+            return
+        for path, stats in cast(Dict[Path, PoFileStats], data["data"]).items():
+            if os.path.getmtime(path.resolve()) == stats.mtime:
+                self.cache[path] = stats
+
+    def write_cache(self, cache_path: Path = Path(".potodo/cache.pickle")) -> None:
+        """Persists all PoFileStats to disk."""
+        os.makedirs(cache_path.parent, exist_ok=True)
+        data = {"version": VERSION, "data": self.cache}
+        with NamedTemporaryFile(
+            mode="wb", delete=False, dir=str(cache_path.parent), prefix=cache_path.name
+        ) as tmp:
+            pickle.dump(data, tmp)
+        os.rename(tmp.name, cache_path)
+        logging.debug("Wrote PoDirectoryStats cache to %s", cache_path)
 
 
 def get_po_stats_from_repo_or_cache(
@@ -125,29 +168,16 @@ def get_po_stats_from_repo_or_cache(
 
     logging.debug("Finding po files in %s", repo_path)
     po_directory = PoDirectoryStats(repo_path, lambda file: not ignore_matches(file))
+    cache_path = repo_path.resolve() / ".potodo" / "cache.pickle"
 
     if no_cache:
         logging.debug("Creating PoFileStats objects for each file without cache")
-        return po_directory.stats_by_directory()
     else:
-        cached_files = get_cache_file_content(
-            path=str(repo_path.resolve()) + "/.potodo/cache.pickle",
-        )
-        po_files_per_directory = po_directory.files_by_directory()
-        po_stats_per_directory: Dict[Path, List[PoFileStats]] = {}
-        for directory, po_files in po_files_per_directory.items():
-            po_stats_per_directory[directory] = []
-            for po_file in po_files:
-                cached_file = cached_files.get(po_file.resolve())
-                if not (
-                    cached_file
-                    and os.path.getmtime(po_file.resolve()) == cached_file.mtime
-                ):
-                    cached_files[po_file.resolve()] = cached_file = PoFileStats(po_file)
-                po_stats_per_directory[directory].append(cached_file)
-        set_cache_content(
-            cached_files,
-            path=str(repo_path.resolve()) + "/.potodo/cache.pickle",
-        )
+        po_directory.read_cache(cache_path)
+
+    po_stats_per_directory = po_directory.stats_by_directory()
+
+    if not no_cache:
+        po_directory.write_cache(cache_path)
 
     return po_stats_per_directory
