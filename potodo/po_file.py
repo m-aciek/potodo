@@ -24,7 +24,8 @@ class PoFileStats:
         self.mtime = os.path.getmtime(path)
         self.pofile: polib.POFile = polib.pofile(str(self.path))
         self.directory: str = self.path.parent.name
-
+        self.reserved_by: Optional[str] = None
+        self.reservation_date: Optional[str] = None
         self.obsolete_entries: Sequence[polib.POEntry] = self.pofile.obsolete_entries()
         self.obsolete_nb: int = len(self.pofile.obsolete_entries())
 
@@ -83,6 +84,8 @@ class PoFileStats:
             "fuzzies": self.fuzzy_nb,
             "translated": self.translated_nb,
             "percent_translated": self.percent_translated,
+            "reserved_by": self.reserved_by,
+            "reservation_date": self.reservation_date,
         }
 
 
@@ -100,9 +103,9 @@ class PoDirectoryStats:
         if filter_function is None:
             filter_function = self.allow_all
         self.filter_function = filter_function
-        # self.cache is an in-memory cache, which can be optionally persisted on disk
+        # self.files can be persisted on disk
         # using `.write_cache()` and `.read_cache()
-        self.cache: Dict[Path, PoFileStats] = {}
+        self.files: Dict[Path, PoFileStats] = {}
 
     @staticmethod
     def allow_all(path: str) -> bool:
@@ -129,9 +132,9 @@ class PoDirectoryStats:
 
     def stats_for_file(self, path: Path) -> PoFileStats:
         """Get a PoFileStats for a given Path."""
-        if path in self.cache:
-            return self.cache[path]
-        return PoFileStats(path)
+        if path not in self.files:
+            self.files[path] = PoFileStats(path)
+        return self.files[path]
 
     def stats_by_directory(self) -> Dict[Path, List[PoFileStats]]:
         return {
@@ -160,12 +163,12 @@ class PoDirectoryStats:
             return
         for path, stats in cast(Dict[Path, PoFileStats], data["data"]).items():
             if os.path.getmtime(path.resolve()) == stats.mtime:
-                self.cache[path] = stats
+                self.files[path] = stats
 
     def write_cache(self, cache_path: Path = Path(".potodo/cache.pickle")) -> None:
         """Persists all PoFileStats to disk."""
         os.makedirs(cache_path.parent, exist_ok=True)
-        data = {"version": VERSION, "data": self.cache}
+        data = {"version": VERSION, "data": self.files}
         with NamedTemporaryFile(
             mode="wb", delete=False, dir=str(cache_path.parent), prefix=cache_path.name
         ) as tmp:

@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Sequence
 
 from gitignore_parser import rule_from_pattern
 
@@ -74,11 +74,6 @@ def non_interactive_output(
     api_url: str,
 ) -> None:
     dir_stats: List[Any] = []
-    # Initialize the arguments
-    if api_url:
-        issue_reservations = get_issue_reservations(hide_reserved, api_url)
-    else:
-        issue_reservations = {}
 
     total_translated: int = 0
     total_entries: int = 0
@@ -97,6 +92,16 @@ def non_interactive_output(
     if not no_cache:
         po_directory.write_cache(cache_path)
 
+    if api_url:
+        issue_reservations = get_issue_reservations(hide_reserved, api_url)
+        for po_file_stats in po_directory.files.values():
+            reserved_by, reservation_date = issue_reservations.get(
+                po_file_stats.filename_dir.lower(), (None, None)
+            )
+            if reserved_by and reservation_date:
+                po_file_stats.reserved_by = reserved_by
+                po_file_stats.reservation_date = reservation_date
+
     for directory, po_files in sorted(po_files_and_dirs.items()):
         # For each directory and files in this directory
         buffer: List[Any] = []
@@ -113,7 +118,6 @@ def non_interactive_output(
                     folder_stats,
                     printed_list,
                     po_file,
-                    issue_reservations,
                     above,
                     below,
                     counts,
@@ -237,7 +241,6 @@ def buffer_add(
     folder_stats: Dict[str, int],
     printed_list: List[bool],
     po_file_stats: PoFileStats,
-    issue_reservations: Dict[str, Tuple[Any, Any]],
     above: int,
     below: int,
     counts: bool,
@@ -270,14 +273,10 @@ def buffer_add(
         # return without adding anything to the buffer
         return
 
-    # `reserved by` if the file is reserved
-    reserved_by, reservation_date = issue_reservations.get(
-        po_file_stats.filename_dir.lower(), (None, None)
-    )
     # unless the offline/hide_reservation are enabled
-    if exclude_reserved and reserved_by:
+    if exclude_reserved and po_file_stats.reserved_by:
         return
-    if only_reserved and not reserved_by:
+    if only_reserved and not po_file_stats.reserved_by:
         return
 
     path = po_file_stats.path
@@ -287,10 +286,7 @@ def buffer_add(
         return
     elif json_format:
         # the order of the keys is the display order
-        d = po_file_stats.as_dict()
-        d["reserved_by"] = reserved_by
-        d["reservation_date"] = reservation_date
-        buffer.append(d)
+        buffer.append(po_file_stats.as_dict())
 
     else:
         if counts:
@@ -298,10 +294,10 @@ def buffer_add(
         else:
             s = po_file_stats.percentages()
 
-        if reserved_by is not None:
-            s += f", réservé par {reserved_by}"
+        if po_file_stats.reserved_by is not None:
+            s += f", réservé par {po_file_stats.reserved_by}"
             if show_reservation_dates:
-                s += f" ({reservation_date})"
+                s += f" ({po_file_stats.reservation_date})"
 
         buffer.append(s)
 
