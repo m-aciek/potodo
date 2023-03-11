@@ -7,7 +7,6 @@ from tempfile import NamedTemporaryFile
 from typing import Callable, Optional, cast
 from typing import Dict
 from typing import List
-from typing import Mapping
 from typing import Sequence
 from typing import Set
 
@@ -153,31 +152,3 @@ class PoDirectoryStats:
             pickle.dump(data, tmp)
         os.rename(tmp.name, cache_path)
         logging.debug("Wrote PoDirectoryStats cache to %s", cache_path)
-
-
-def get_po_stats_from_repo_or_cache(
-    repo_path: Path,
-    ignore_matches: Callable[[str], bool],
-    no_cache: bool = False,
-) -> Mapping[Path, List[PoFileStats]]:
-    """Gets all the po files recursively from 'repo_path'
-    and cache if no_cache is set to False, excluding those if ignore_matches match them.
-    Return a dict with all directories and PoFile instances of
-    `.po` files in those directories.
-    """
-
-    logging.debug("Finding po files in %s", repo_path)
-    po_directory = PoDirectoryStats(repo_path, lambda file: not ignore_matches(file))
-    cache_path = repo_path.resolve() / ".potodo" / "cache.pickle"
-
-    if no_cache:
-        logging.debug("Creating PoFileStats objects for each file without cache")
-    else:
-        po_directory.read_cache(cache_path)
-
-    po_stats_per_directory = po_directory.stats_by_directory()
-
-    if not no_cache:
-        po_directory.write_cache(cache_path)
-
-    return po_stats_per_directory

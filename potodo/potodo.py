@@ -16,8 +16,7 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import get_po_stats_from_repo_or_cache
-from potodo.po_file import PoFileStats
+from potodo.po_file import PoFileStats, PoDirectoryStats
 
 
 def print_dir_stats(
@@ -88,7 +87,21 @@ def non_interactive_output(
 
     total_translated: int = 0
     total_entries: int = 0
-    po_files_and_dirs = get_po_stats_from_repo_or_cache(path, ignore_matches, no_cache)
+
+    logging.debug("Finding po files in %s", path)
+    po_directory = PoDirectoryStats(path, lambda file: not ignore_matches(file))
+    cache_path = path.resolve() / ".potodo" / "cache.pickle"
+
+    if no_cache:
+        logging.debug("Creating PoFileStats objects for each file without cache")
+    else:
+        po_directory.read_cache(cache_path)
+
+    po_files_and_dirs = po_directory.stats_by_directory()
+
+    if not no_cache:
+        po_directory.write_cache(cache_path)
+
     for directory, po_files in sorted(po_files_and_dirs.items()):
         # For each directory and files in this directory
         buffer: List[Any] = []
