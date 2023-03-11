@@ -62,19 +62,36 @@ class PoFileStats:
         """When two PoFiles are compared, their filenames are compared."""
         return self.filename < other.filename
 
-    def counts(self) -> str:
+    def reservation_str(self, with_reservation_dates: bool = False) -> str:
+        if self.reserved_by is None:
+            return ""
+        as_string = f"reserved by {self.reserved_by}"
+        if with_reservation_dates:
+            as_string += f" ({self.reservation_date})"
+        return as_string
+
+    def counts(self, with_reservation_dates: bool = False) -> str:
         """Return a string representation with counts of untranslated and fuzzy."""
         missing = len(self.fuzzy_entries) + len(self.untranslated_entries)
-        fuzzy_str = f", including {self.fuzzy_nb} fuzzies." if self.fuzzy_nb else ""
-        return f"- {self.filename:<30} {missing:3d} to do{fuzzy_str}."
+        parts = []
+        parts.append(f"- {self.filename:<30} {missing:3d} to do")
+        if self.fuzzy_nb:
+            parts.append(f"including {self.fuzzy_nb} fuzzies")
+        if self.reserved_by is not None:
+            parts.append(self.reservation_str(with_reservation_dates))
+        return ", ".join(parts) + "."
 
-    def percentages(self) -> str:
+    def percentages(self, with_reservation_dates: bool = False) -> str:
         """Return a string representation with pct of untranslated and fuzzy."""
-        fuzzy_str = f", {self.fuzzy_nb} fuzzy" if self.fuzzy_nb else ""
-        return (
+        parts = [
             f"- {self.filename:<30} {self.translated_nb:3d} / {self.po_file_size:3d}"
-            f" ({self.percent_translated:5.1f}% translated){fuzzy_str}."
-        )
+            f" ({self.percent_translated:5.1f}% translated)"
+        ]
+        if self.fuzzy_nb:
+            parts.append(f"{self.fuzzy_nb} fuzzy")
+        if self.reserved_by is not None:
+            parts.append(self.reservation_str(with_reservation_dates))
+        return ", ".join(parts) + "."
 
     def as_dict(self) -> Dict[str, Any]:
         return {

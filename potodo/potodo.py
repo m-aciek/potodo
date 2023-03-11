@@ -290,16 +290,9 @@ def buffer_add(
 
     else:
         if counts:
-            s = po_file_stats.counts()
+            buffer.append(po_file_stats.counts())
         else:
-            s = po_file_stats.percentages()
-
-        if po_file_stats.reserved_by is not None:
-            s += f", réservé par {po_file_stats.reserved_by}"
-            if show_reservation_dates:
-                s += f" ({po_file_stats.reservation_date})"
-
-        buffer.append(s)
+            buffer.append(po_file_stats.percentages())
 
     # Add the percent translated to the folder statistics
     folder_stats["translated"] += po_file_stats.translated_nb
