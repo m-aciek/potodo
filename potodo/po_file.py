@@ -67,7 +67,7 @@ from potodo.cache import get_cache_file_content  # noqa
 from potodo.cache import set_cache_content  # noqa
 
 
-class PODirectory:
+class PoDirectoryStats:
     """Represents a hierarchy of `.po` files."""
 
     def __init__(
@@ -124,7 +124,7 @@ def get_po_stats_from_repo_or_cache(
     """
 
     logging.debug("Finding po files in %s", repo_path)
-    po_directory = PODirectory(repo_path, lambda file: not ignore_matches(file))
+    po_directory = PoDirectoryStats(repo_path, lambda file: not ignore_matches(file))
 
     if no_cache:
         logging.debug("Creating PoFileStats objects for each file without cache")
