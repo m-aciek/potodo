@@ -61,6 +61,13 @@ class PoFileStats:
         """When two PoFiles are compared, their filenames are compared."""
         return self.filename < other.filename
 
+    def counts(self) -> str:
+        """Return a string representation with counts of untranslated and fuzzy."""
+        missing = len(self.fuzzy_entries) + len(self.untranslated_entries)
+        fuzzy_nb = self.fuzzy_nb if self.fuzzy_entries else 0
+        fuzzy_str = f", including {fuzzy_nb} fuzzies." if fuzzy_nb else ""
+        return f"- {self.filename:<30} {missing:3d} to do{fuzzy_str}."
+
 
 class PoDirectoryStats:
     """Represents a hierarchy of `.po` files."""

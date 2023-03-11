@@ -271,7 +271,6 @@ def buffer_add(
         return
 
     fuzzy_entries = po_file_stats.fuzzy_entries
-    untranslated_entries = po_file_stats.untranslated_entries
     # nb of fuzzies in the file IF there are some fuzzies in the file
     fuzzy_nb = po_file_stats.fuzzy_nb if fuzzy_entries else 0
     # number of entries translated
@@ -317,10 +316,7 @@ def buffer_add(
         s = f"- {filename:<30} "  # The filename
 
         if counts:
-            missing = len(fuzzy_entries) + len(untranslated_entries)
-            s += f"{missing:3d} to do"
-            s += f", including {fuzzy_nb} fuzzies." if fuzzy_nb else ""
-
+            s = po_file_stats.counts()
         else:
             s += f"{translated_nb:3d} / {po_file_size:3d} "
             s += f"({percent_translated:5.1f}% translated)"
