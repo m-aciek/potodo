@@ -4,7 +4,7 @@ import os
 import pickle
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Callable, Dict, List, Optional, Sequence, Set, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, cast
 
 import polib
 
@@ -64,18 +64,26 @@ class PoFileStats:
     def counts(self) -> str:
         """Return a string representation with counts of untranslated and fuzzy."""
         missing = len(self.fuzzy_entries) + len(self.untranslated_entries)
-        fuzzy_nb = self.fuzzy_nb if self.fuzzy_entries else 0
-        fuzzy_str = f", including {fuzzy_nb} fuzzies." if fuzzy_nb else ""
+        fuzzy_str = f", including {self.fuzzy_nb} fuzzies." if self.fuzzy_nb else ""
         return f"- {self.filename:<30} {missing:3d} to do{fuzzy_str}."
 
     def percentages(self) -> str:
         """Return a string representation with pct of untranslated and fuzzy."""
-        fuzzy_nb = self.fuzzy_nb if self.fuzzy_entries else 0
-        fuzzy_str = f", {fuzzy_nb} fuzzy" if fuzzy_nb else ""
+        fuzzy_str = f", {self.fuzzy_nb} fuzzy" if self.fuzzy_nb else ""
         return (
             f"- {self.filename:<30} {self.translated_nb:3d} / {self.po_file_size:3d}"
             f" ({self.percent_translated:5.1f}% translated){fuzzy_str}."
         )
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "name": f"{self.directory}/{self.filename.replace('.po', '')}",
+            "path": str(self.path),
+            "entries": self.po_file_size,
+            "fuzzies": self.fuzzy_nb,
+            "translated": self.translated_nb,
+            "percent_translated": self.percent_translated,
+        }
 
 
 class PoDirectoryStats:

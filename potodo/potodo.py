@@ -270,16 +270,6 @@ def buffer_add(
         # return without adding anything to the buffer
         return
 
-    fuzzy_entries = po_file_stats.fuzzy_entries
-    # nb of fuzzies in the file IF there are some fuzzies in the file
-    fuzzy_nb = po_file_stats.fuzzy_nb if fuzzy_entries else 0
-    # number of entries translated
-    translated_nb = po_file_stats.translated_nb
-    # file size
-    po_file_size = po_file_stats.po_file_size
-    # percentage of the file already translated
-    percent_translated = po_file_stats.percent_translated
-
     # `reserved by` if the file is reserved
     reserved_by, reservation_date = issue_reservations.get(
         po_file_stats.filename_dir.lower(), (None, None)
@@ -290,8 +280,6 @@ def buffer_add(
     if only_reserved and not reserved_by:
         return
 
-    directory = po_file_stats.directory
-    filename = po_file_stats.filename
     path = po_file_stats.path
 
     if matching_files:
@@ -299,17 +287,9 @@ def buffer_add(
         return
     elif json_format:
         # the order of the keys is the display order
-        d = dict(
-            name=f"{directory}/{filename.replace('.po', '')}",
-            path=str(path),
-            entries=po_file_size,
-            fuzzies=fuzzy_nb,
-            translated=translated_nb,
-            percent_translated=percent_translated,
-            reserved_by=reserved_by,
-            reservation_date=reservation_date,
-        )
-
+        d = po_file_stats.as_dict()
+        d["reserved_by"] = reserved_by
+        d["reservation_date"] = reservation_date
         buffer.append(d)
 
     else:
