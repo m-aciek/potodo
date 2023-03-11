@@ -1,16 +1,10 @@
-[comment]: <> (<p align="center"><img width=12.5% src="https://github.com/afpy/potodo/blob/master/media/Logo.png"></p>)
-<p align="center"><img width=60% src="https://github.com/afpy/potodo/blob/master/media/Potodo.png"></p>
+<p align="center"><img width=60% src="https://git.afpy.org/AFPy/potodo/raw/branch/master/media/Potodo.png"></p>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)
-![Build status](https://img.shields.io/github/workflow/status/afpy/potodo/Tests)
-[![GitHub Issues](https://img.shields.io/github/issues/afpy/potodo.svg)](https://github.com/afpy/potodo/issues)
-![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ![PyPI](https://img.shields.io/pypi/v/potodo)
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)
 
 ## What is it ?
 
@@ -134,7 +128,7 @@ pip install -e .
 
 ## Contributing
 
-1. Fork it (<https://github.com/afpy/potdo/fork>)
+1. Fork it (<https://git.afpy.org/repo/fork/100>)
 2. Create your feature branch (`git checkout -b feature/fooBar`
 
 `/!\` Don't forget to bump the version in `potodo/__init__.py` when you're pushing your changes to your branch
@@ -142,27 +136,3 @@ pip install -e .
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
 5. Create a new Pull Request
-
-
-## Contributors ✨
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tr>
-    <td align="center"><a href="https://mdk.fr"><img src="https://avatars2.githubusercontent.com/u/239510?v=4" width="100px;" alt=""/><br /><sub><b>Julien Palard</b></sub></a><br /><a href="https://github.com/Seluj78/Potodo/pulls?q=is%3Apr+reviewed-by%3AJulienPalard" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/Seluj78/Potodo/commits?author=JulienPalard" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/awecx"><img src="https://avatars1.githubusercontent.com/u/43954001?v=4" width="100px;" alt=""/><br /><sub><b>Antoine</b></sub></a><br /><a href="https://github.com/Seluj78/Potodo/pulls?q=is%3Apr+reviewed-by%3Aawecx" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/Seluj78/Potodo/commits?author=awecx" title="Code">💻</a></td>
-    <td align="center"><a href="https://juleslasne.com"><img src="https://avatars0.githubusercontent.com/u/4641317?v=4" width="100px;" alt=""/><br /><sub><b>Jules Lasne (jlasne)</b></sub></a><br /><a href="https://github.com/Seluj78/Potodo/pulls?q=is%3Apr+reviewed-by%3ASeluj78" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/Seluj78/Potodo/commits?author=Seluj78" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/christopheNan"><img src="https://avatars2.githubusercontent.com/u/35002064?v=4" width="100px;" alt=""/><br /><sub><b>Christophe Nanteuil</b></sub></a><br /><a href="https://github.com/Seluj78/Potodo/pulls?q=is%3Apr+reviewed-by%3AchristopheNan" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/Seluj78/Potodo/commits?author=christopheNan" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/grenoya"><img src="https://avatars3.githubusercontent.com/u/996321?v=4" width="100px;" alt=""/><br /><sub><b>Claire Revillet</b></sub></a><br /><a href="https://github.com/Seluj78/Potodo/pulls?q=is%3Apr+reviewed-by%3Agrenoya" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/Seluj78/Potodo/commits?author=grenoya" title="Code">💻</a></td>
-  </tr>
-</table>
-
-<!-- markdownlint-enable -->
-<!-- prettier-ignore-end -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

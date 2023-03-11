@@ -105,7 +105,7 @@ def interactive_output(path: Path, ignore_matches: Callable[[str], bool]) -> Non
             break
     if final_choice == 0:
         webbrowser.open(
-            f"https://github.com/python/python-docs-fr/issues/new?title=Je%20travaille%20sur%20"
+            f"https://git.afpy.org/AFPy/python-docs-fr/issues/new?title=Je%20travaille%20sur%20"
             f"{directory}/{file}"
             f"&body=%0A%0A%0A---%0AThis+issue+was+created+using+potodo+interactive+mode."
         )

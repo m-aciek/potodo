@@ -35,7 +35,7 @@ content-type = "text/markdown"
 text = "MIT License"
 
 [project.urls]
-Homepage = "https://github.com/afpy/potodo"
+Homepage = "https://git.afpy.org/AFPy/potodo"
 
 [project.scripts]
 potodo = "potodo.potodo:main"
