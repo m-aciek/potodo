@@ -64,6 +64,18 @@ from potodo.cache import get_cache_file_content  # noqa
 from potodo.cache import set_cache_content  # noqa
 
 
+class PODirectory:
+    """Represents a hierarchy of `.po` files."""
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def find_all_files(self, ignore_function: Callable[[str], bool]) -> List[Path]:
+        return [
+            file for file in self.path.rglob("*.po") if not ignore_function(str(file))
+        ]
+
+
 def get_po_stats_from_repo_or_cache(
     repo_path: Path,
     ignore_matches: Callable[[str], bool],
@@ -79,9 +91,7 @@ def get_po_stats_from_repo_or_cache(
     # not being in the exclusion list or in
     # any (sub)folder from the exclusion list
     logging.debug("Finding all files matching **/*.po in %s", repo_path)
-    all_po_files: List[Path] = [
-        file for file in repo_path.rglob("*.po") if not ignore_matches(str(file))
-    ]
+    all_po_files = PODirectory(repo_path).find_all_files(ignore_matches)
 
     # Group files by directory
     logging.debug("Grouping files per directory")
