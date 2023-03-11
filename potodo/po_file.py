@@ -2,7 +2,7 @@ import itertools
 import logging
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -67,13 +67,40 @@ from potodo.cache import set_cache_content  # noqa
 class PODirectory:
     """Represents a hierarchy of `.po` files."""
 
-    def __init__(self, path: Path):
+    def __init__(
+        self, path: Path, filter_function: Optional[Callable[[str], bool]] = None
+    ):
+        """filter_function is a function to include/exclude po files
+        or directories, it should return True for the file to be
+        included.
+        """
         self.path = path
+        if filter_function is None:
+            filter_function = self.allow_all
+        self.filter_function = filter_function
 
-    def find_all_files(self, ignore_function: Callable[[str], bool]) -> List[Path]:
+    @staticmethod
+    def allow_all(path: str) -> bool:
+        """Default filtering function: allow all files."""
+        return True
+
+    def find_all_files(self) -> List[Path]:
+        """Get all the files matching `**/*.po`.
+        File can be filtered using `self.filter_function`, see __init__.
+        """
         return [
-            file for file in self.path.rglob("*.po") if not ignore_function(str(file))
+            file for file in self.path.rglob("*.po") if self.filter_function(str(file))
         ]
+
+    def files_by_directory(self) -> Dict[str, Set[Path]]:
+        return {
+            name: set(files)
+            # We assume the output of rglob to be sorted,
+            # so each 'name' is unique within groupby
+            for name, files in itertools.groupby(
+                self.find_all_files(), key=lambda path: path.parent.name
+            )
+        }
 
 
 def get_po_stats_from_repo_or_cache(
@@ -87,22 +114,10 @@ def get_po_stats_from_repo_or_cache(
     `.po` files in those directories.
     """
 
-    # Get all the files matching `**/*.po`
-    # not being in the exclusion list or in
-    # any (sub)folder from the exclusion list
     logging.debug("Finding all files matching **/*.po in %s", repo_path)
-    all_po_files = PODirectory(repo_path).find_all_files(ignore_matches)
+    po_directory = PODirectory(repo_path, lambda file: not ignore_matches(file))
 
-    # Group files by directory
-    logging.debug("Grouping files per directory")
-    po_files_per_directory: Mapping[str, Set[Path]] = {
-        name: set(files)
-        # We assume the output of rglob to be sorted,
-        # so each 'name' is unique within groupby
-        for name, files in itertools.groupby(
-            all_po_files, key=lambda path: path.parent.name
-        )
-    }
+    po_files_per_directory = po_directory.files_by_directory()
 
     if no_cache:
         # Turn paths into stat objects
