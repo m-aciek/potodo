@@ -105,6 +105,12 @@ class PODirectory:
             )
         }
 
+    def stats_by_directory(self) -> Dict[Path, List[PoFileStats]]:
+        return {
+            directory: [PoFileStats(po_file) for po_file in po_files]
+            for directory, po_files in self.files_by_directory().items()
+        }
+
 
 def get_po_stats_from_repo_or_cache(
     repo_path: Path,
@@ -117,23 +123,18 @@ def get_po_stats_from_repo_or_cache(
     `.po` files in those directories.
     """
 
-    logging.debug("Finding all files matching **/*.po in %s", repo_path)
+    logging.debug("Finding po files in %s", repo_path)
     po_directory = PODirectory(repo_path, lambda file: not ignore_matches(file))
 
-    po_files_per_directory = po_directory.files_by_directory()
-
     if no_cache:
-        # Turn paths into stat objects
         logging.debug("Creating PoFileStats objects for each file without cache")
-        po_stats_per_directory: Dict[Path, List[PoFileStats]] = {
-            directory: [PoFileStats(po_file) for po_file in po_files]
-            for directory, po_files in po_files_per_directory.items()
-        }
+        return po_directory.stats_by_directory()
     else:
         cached_files = get_cache_file_content(
             path=str(repo_path.resolve()) + "/.potodo/cache.pickle",
         )
-        po_stats_per_directory = dict()
+        po_files_per_directory = po_directory.files_by_directory()
+        po_stats_per_directory: Dict[Path, List[PoFileStats]] = {}
         for directory, po_files in po_files_per_directory.items():
             po_stats_per_directory[directory] = []
             for po_file in po_files:
