@@ -313,14 +313,10 @@ def buffer_add(
         buffer.append(d)
 
     else:
-        s = f"- {filename:<30} "  # The filename
-
         if counts:
             s = po_file_stats.counts()
         else:
-            s += f"{translated_nb:3d} / {po_file_size:3d} "
-            s += f"({percent_translated:5.1f}% translated)"
-            s += f", {fuzzy_nb} fuzzy" if fuzzy_nb else ""
+            s = po_file_stats.percentages()
 
         if reserved_by is not None:
             s += f", réservé par {reserved_by}"

@@ -68,6 +68,15 @@ class PoFileStats:
         fuzzy_str = f", including {fuzzy_nb} fuzzies." if fuzzy_nb else ""
         return f"- {self.filename:<30} {missing:3d} to do{fuzzy_str}."
 
+    def percentages(self) -> str:
+        """Return a string representation with pct of untranslated and fuzzy."""
+        fuzzy_nb = self.fuzzy_nb if self.fuzzy_entries else 0
+        fuzzy_str = f", {fuzzy_nb} fuzzy" if fuzzy_nb else ""
+        return (
+            f"- {self.filename:<30} {self.translated_nb:3d} / {self.po_file_size:3d}"
+            f" ({self.percent_translated:5.1f}% translated){fuzzy_str}."
+        )
+
 
 class PoDirectoryStats:
     """Represents a hierarchy of `.po` files."""
