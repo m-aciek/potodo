@@ -13,7 +13,10 @@ import polib
 
 
 class PoFileStats:
-    """Class for each `.po` file containing all the necessary information about its progress"""  # noqa
+    """Statistics about a po file.
+
+    Contains all the necessary information about the progress of a given po file.
+    """
 
     def __init__(self, path: Path):
         """Initializes the class with all the correct information"""
