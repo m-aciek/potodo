@@ -1,4 +1,4 @@
-<p align="center"><img width=60% src="https://git.afpy.org/AFPy/potodo/raw/branch/master/media/Potodo.png"></p>
+<p align="center"><img width=60% src="https://git.afpy.org/AFPy/potodo/raw/branch/main/media/Potodo.png"></p>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 ![PyPI](https://img.shields.io/pypi/v/potodo)
