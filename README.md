@@ -1,10 +1,12 @@
-<p align="center"><img width=60% src="https://git.afpy.org/AFPy/potodo/raw/branch/main/media/Potodo.png"></p>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-![PyPI](https://img.shields.io/pypi/v/potodo)
-![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)
+<p align="center">
+    <img width=60% src="https://git.afpy.org/AFPy/potodo/raw/branch/main/media/Potodo.png">
+</p>
+<p align="center">
+    <img src="https://img.shields.io/pypi/v/potodo">
+    <img src="https://img.shields.io/badge/python-v3.6+-blue.svg">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
+    <img src="https://img.shields.io/badge/contributions-welcome-orange.svg">
+</p>
 
 ## What is it ?
 
