@@ -1,10 +1,7 @@
 import logging
 import re
 from datetime import datetime
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 import requests
 

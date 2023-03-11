@@ -1,8 +1,6 @@
 import webbrowser
 from pathlib import Path
-from typing import Callable
-from typing import cast
-from typing import List
+from typing import Callable, List, cast
 
 from simple_term_menu import TerminalMenu
 

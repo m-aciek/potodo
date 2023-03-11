@@ -2,12 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Sequence
-from typing import Tuple
+from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 from gitignore_parser import rule_from_pattern
 
@@ -16,7 +11,7 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoFileStats, PoDirectoryStats
+from potodo.po_file import PoDirectoryStats, PoFileStats
 
 
 def print_dir_stats(

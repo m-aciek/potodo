@@ -1,9 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any
-from typing import List
-from typing import Mapping
+from typing import Any, List, Mapping
 
 
 def check_args(

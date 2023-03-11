@@ -1,14 +1,10 @@
 import itertools
 import logging
 import os
-from pathlib import Path
 import pickle
+from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Callable, Optional, cast
-from typing import Dict
-from typing import List
-from typing import Sequence
-from typing import Set
+from typing import Callable, Dict, List, Optional, Sequence, Set, cast
 
 import polib
 
