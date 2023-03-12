@@ -11,7 +11,7 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoDirectoryStats, PoFileStats
+from potodo.po_file import PoProjectStats, PoFileStats
 
 
 def print_dir_stats(
@@ -79,7 +79,7 @@ def non_interactive_output(
     total_entries: int = 0
 
     logging.debug("Finding po files in %s", path)
-    po_directory = PoDirectoryStats(path, lambda file: not ignore_matches(file))
+    po_directory = PoProjectStats(path, lambda file: not ignore_matches(file))
     cache_path = path.resolve() / ".potodo" / "cache.pickle"
 
     if no_cache:

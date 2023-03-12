@@ -106,7 +106,7 @@ class PoFileStats:
         }
 
 
-class PoDirectoryStats:
+class PoProjectStats:
     """Represents a hierarchy of `.po` files."""
 
     def __init__(
@@ -191,4 +191,4 @@ class PoDirectoryStats:
         ) as tmp:
             pickle.dump(data, tmp)
         os.rename(tmp.name, cache_path)
-        logging.debug("Wrote PoDirectoryStats cache to %s", cache_path)
+        logging.debug("Wrote PoProjectStats cache to %s", cache_path)
