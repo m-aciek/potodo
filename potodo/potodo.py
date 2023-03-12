@@ -98,12 +98,19 @@ def print_po_project(
 
         for po_file in sorted(directory.files):
             if select(po_file):
-                line = [po_file.counts() if counts else po_file.percentages()]
+                if counts:
+                    line = f"- {po_file.filename:<30} {po_file.missing:3d} to do"
+                else:
+                    line = (
+                        f"- {po_file.filename:<30} "
+                        f"{po_file.translated_nb:3d} / {po_file.po_file_size:3d}"
+                        f" ({po_file.percent_translated:5.1f}% translated)"
+                    )
                 if po_file.fuzzy_nb:
-                    line.append(f"{po_file.fuzzy_nb} fuzzy")
+                    line += f", {po_file.fuzzy_nb} fuzzy"
                 if po_file.reserved_by is not None:
-                    line.append(po_file.reservation_str(show_reservation_dates))
-                print(", ".join(line) + ".")
+                    line += ", " + po_file.reservation_str(show_reservation_dates)
+                print(line + ".")
 
     if po_project.total != 0:
         print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")

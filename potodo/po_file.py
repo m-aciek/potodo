@@ -70,20 +70,9 @@ class PoFileStats:
             as_string += f" ({self.reservation_date})"
         return as_string
 
-    def counts(self, with_reservation_dates: bool = False) -> str:
-        """Return a string representation with counts of untranslated and fuzzy."""
-        missing = len(self.fuzzy_entries) + len(self.untranslated_entries)
-        parts = []
-        parts.append(f"- {self.filename:<30} {missing:3d} to do")
-        return ", ".join(parts)
-
-    def percentages(self, with_reservation_dates: bool = False) -> str:
-        """Return a string representation with pct of untranslated and fuzzy."""
-        parts = [
-            f"- {self.filename:<30} {self.translated_nb:3d} / {self.po_file_size:3d}"
-            f" ({self.percent_translated:5.1f}% translated)"
-        ]
-        return ", ".join(parts)
+    @property
+    def missing(self) -> int:
+        return len(self.fuzzy_entries) + len(self.untranslated_entries)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
