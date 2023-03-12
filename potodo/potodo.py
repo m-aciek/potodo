@@ -11,7 +11,7 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoDirectoryStats, PoFileStats, PoProjectStats
+from potodo.po_file import PoDirectoryStats, PoProjectStats
 
 
 def print_dir_stats(
@@ -110,19 +110,42 @@ def non_interactive_output(
             if not only_fuzzy or po_file.fuzzy_entries:
                 if exclude_fuzzy and po_file.fuzzy_entries:
                     continue
-                buffer_add(
-                    buffer,
-                    printed_list,
-                    po_file,
-                    above,
-                    below,
-                    counts,
-                    json_format,
-                    exclude_reserved,
-                    only_reserved,
-                    show_reservation_dates,
-                    matching_files,
-                )
+                # If the file is completely translated,
+                # or is translated below what's requested
+                # or is translated above what's requested
+                if (
+                    po_file.percent_translated == 100
+                    or po_file.percent_translated < above
+                    or po_file.percent_translated > below
+                ):
+                    if not json_format:
+                        # don't print that file
+                        printed_list.append(False)
+
+                    # return without adding anything to the buffer
+                    continue
+
+                # unless the offline/hide_reservation are enabled
+                if exclude_reserved and po_file.reserved_by:
+                    continue
+                if only_reserved and not po_file.reserved_by:
+                    continue
+
+                if matching_files:
+                    print(po_file.path)
+                    continue
+                elif json_format:
+                    # the order of the keys is the display order
+                    buffer.append(po_file.as_dict())
+
+                else:
+                    if counts:
+                        buffer.append(po_file.counts())
+                    else:
+                        buffer.append(po_file.percentages())
+
+                # Indicate to print the file
+                printed_list.append(True)
 
         # Once all files have been processed, print the dir and the files
         # or store them into a dict to print them once all directories have
@@ -230,63 +253,6 @@ def exec_potodo(
             ignore_matches,
             api_url,
         )
-
-
-def buffer_add(
-    buffer: List[Any],
-    printed_list: List[bool],
-    po_file_stats: PoFileStats,
-    above: int,
-    below: int,
-    counts: bool,
-    json_format: bool,
-    exclude_reserved: bool,
-    only_reserved: bool,
-    show_reservation_dates: bool,
-    matching_files: bool,
-) -> None:
-    """Will add to the buffer the information to print about the file is
-    the file isn't translated entirely or above or below requested
-    values.
-    """
-    # If the file is completely translated,
-    # or is translated below what's requested
-    # or is translated above what's requested
-    if (
-        po_file_stats.percent_translated == 100
-        or po_file_stats.percent_translated < above
-        or po_file_stats.percent_translated > below
-    ):
-        if not json_format:
-            # don't print that file
-            printed_list.append(False)
-
-        # return without adding anything to the buffer
-        return
-
-    # unless the offline/hide_reservation are enabled
-    if exclude_reserved and po_file_stats.reserved_by:
-        return
-    if only_reserved and not po_file_stats.reserved_by:
-        return
-
-    path = po_file_stats.path
-
-    if matching_files:
-        print(path)
-        return
-    elif json_format:
-        # the order of the keys is the display order
-        buffer.append(po_file_stats.as_dict())
-
-    else:
-        if counts:
-            buffer.append(po_file_stats.counts())
-        else:
-            buffer.append(po_file_stats.percentages())
-
-    # Indicate to print the file
-    printed_list.append(True)
 
 
 def main() -> None:
