@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, List, Sequence
 
 from gitignore_parser import rule_from_pattern
 
@@ -32,24 +32,6 @@ def print_dir_stats(
         print(f"\n\n# {directory.path.name} ({folder_completion:.2f}% done)\n")
         print("\n".join(buffer))
     logging.debug("Not printing directory %s", directory.path)
-
-
-def add_dir_stats(
-    directory: PoDirectoryStats,
-    buffer: List[Dict[str, str]],
-    printed_list: Sequence[bool],
-    all_stats: List[Dict[str, Any]],
-) -> None:
-    """Appends directory name, its stats and the buffer to stats"""
-    if any(printed_list):
-        folder_completion = 100 * directory.translated / directory.total
-        all_stats.append(
-            dict(
-                name=f"{directory.path.name}/",
-                percent_translated=float(f"{folder_completion:.2f}"),
-                files=buffer,
-            )
-        )
 
 
 def scan_path(
@@ -104,7 +86,46 @@ def non_interactive_output(
     api_url: str,
 ) -> None:
     po_project = scan_path(path, no_cache, hide_reserved, ignore_matches, api_url)
-    dir_stats: List[Any] = []
+    if json_format:
+        print_po_project_as_json(
+            po_project,
+            above,
+            below,
+            only_fuzzy,
+            hide_reserved,
+            counts,
+            exclude_fuzzy,
+            exclude_reserved,
+            only_reserved,
+            matching_files,
+        )
+    else:
+        print_po_project(
+            po_project,
+            above,
+            below,
+            only_fuzzy,
+            hide_reserved,
+            counts,
+            exclude_fuzzy,
+            exclude_reserved,
+            only_reserved,
+            matching_files,
+        )
+
+
+def print_po_project(
+    po_project: PoProjectStats,
+    above: int,
+    below: int,
+    only_fuzzy: bool,
+    hide_reserved: bool,
+    counts: bool,
+    exclude_fuzzy: bool,
+    exclude_reserved: bool,
+    only_reserved: bool,
+    matching_files: bool,
+) -> None:
     for directory in sorted(po_project.stats_by_directory()):
         # For each directory and files in this directory
         buffer: List[Any] = []
@@ -132,10 +153,6 @@ def non_interactive_output(
             if matching_files:
                 print(po_file.path)
                 continue
-            elif json_format:
-                # the order of the keys is the display order
-                buffer.append(po_file.as_dict())
-
             else:
                 if counts:
                     buffer.append(po_file.counts())
@@ -148,25 +165,66 @@ def non_interactive_output(
         # Once all files have been processed, print the dir and the files
         # or store them into a dict to print them once all directories have
         # been processed.
-        if json_format:
-            add_dir_stats(directory, buffer, printed_list, dir_stats)
-        else:
-            print_dir_stats(directory, buffer, printed_list)
+        print_dir_stats(directory, buffer, printed_list)
 
-    if json_format:
-        print(
-            json.dumps(
-                dir_stats,
-                indent=4,
-                separators=(",", ": "),
-                sort_keys=False,
-                default=json_dateconv,
+    if po_project.total != 0:
+        total_completion = 100 * po_project.translated / po_project.total
+        print(f"\n\n# TOTAL ({total_completion:.2f}% done)\n")
+
+
+def print_po_project_as_json(
+    po_project: PoProjectStats,
+    above: int,
+    below: int,
+    only_fuzzy: bool,
+    hide_reserved: bool,
+    counts: bool,
+    exclude_fuzzy: bool,
+    exclude_reserved: bool,
+    only_reserved: bool,
+    matching_files: bool,
+) -> None:
+    dir_stats: List[Any] = []
+    for directory in sorted(po_project.stats_by_directory()):
+        buffer: List[Any] = []
+        for po_file in sorted(directory.files):
+            if only_fuzzy and not po_file.fuzzy_entries:
+                continue
+            if exclude_fuzzy and po_file.fuzzy_entries:
+                continue
+            if (
+                po_file.percent_translated == 100
+                or po_file.percent_translated < above
+                or po_file.percent_translated > below
+            ):
+                continue
+            if exclude_reserved and po_file.reserved_by:
+                continue
+            if only_reserved and not po_file.reserved_by:
+                continue
+            buffer.append(po_file.as_dict())
+
+        # Once all files have been processed, print the dir and the files
+        # or store them into a dict to print them once all directories have
+        # been processed.
+        if buffer:
+            folder_completion = 100 * directory.translated / directory.total
+            dir_stats.append(
+                {
+                    "name": f"{directory.path.name}/",
+                    "percent_translated": float(f"{folder_completion:.2f}"),
+                    "files": buffer,
+                }
             )
+    print(
+        json.dumps(
+            dir_stats,
+            indent=4,
+            separators=(",", ": "),
+            sort_keys=False,
+            default=json_dateconv,
         )
-    else:
-        if po_project.total != 0:
-            total_completion = 100 * po_project.translated / po_project.total
-            print(f"\n\n# TOTAL ({total_completion:.2f}% done)\n")
+    )
 
 
 def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool]:
