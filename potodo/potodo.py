@@ -68,7 +68,6 @@ def scan_path(
 
 def non_interactive_output(
     path: Path,
-    exclude: List[str],
     hide_reserved: bool,
     counts: bool,
     json_format: bool,
@@ -223,7 +222,6 @@ def exec_potodo(
     else:
         non_interactive_output(
             path,
-            exclude,
             hide_reserved,
             counts,
             json_format,
