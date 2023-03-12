@@ -17,7 +17,6 @@ from potodo.po_file import PoDirectoryStats, PoFileStats, PoProjectStats
 def print_dir_stats(
     directory: PoDirectoryStats,
     buffer: Sequence[str],
-    folder_stats: Dict[str, int],
     printed_list: Sequence[bool],
 ) -> None:
     """This function prints the directory name, its stats and the buffer"""
@@ -28,7 +27,7 @@ def print_dir_stats(
         # or False is placed in the printed_list list.  If False is
         # placed it means it doesnt need to be printed
 
-        folder_completion = 100 * folder_stats["translated"] / folder_stats["total"]
+        folder_completion = 100 * directory.translated / directory.total
 
         print(f"\n\n# {directory.path.name} ({folder_completion:.2f}% done)\n")
         print("\n".join(buffer))
@@ -38,13 +37,12 @@ def print_dir_stats(
 def add_dir_stats(
     directory: PoDirectoryStats,
     buffer: List[Dict[str, str]],
-    folder_stats: Dict[str, int],
     printed_list: Sequence[bool],
     all_stats: List[Dict[str, Any]],
 ) -> None:
     """Appends directory name, its stats and the buffer to stats"""
     if any(printed_list):
-        folder_completion = 100 * folder_stats["translated"] / folder_stats["total"]
+        folder_completion = 100 * directory.translated / directory.total
         all_stats.append(
             dict(
                 name=f"{directory.path.name}/",
@@ -105,7 +103,6 @@ def non_interactive_output(
     for directory in sorted(po_dirs):
         # For each directory and files in this directory
         buffer: List[Any] = []
-        folder_stats: Dict[str, int] = {"translated": 0, "total": 0}
         printed_list: List[bool] = []
 
         for po_file in sorted(directory.files):
@@ -115,7 +112,6 @@ def non_interactive_output(
                     continue
                 buffer_add(
                     buffer,
-                    folder_stats,
                     printed_list,
                     po_file,
                     above,
@@ -132,12 +128,12 @@ def non_interactive_output(
         # or store them into a dict to print them once all directories have
         # been processed.
         if json_format:
-            add_dir_stats(directory, buffer, folder_stats, printed_list, dir_stats)
+            add_dir_stats(directory, buffer, printed_list, dir_stats)
         else:
-            print_dir_stats(directory, buffer, folder_stats, printed_list)
+            print_dir_stats(directory, buffer, printed_list)
 
-        total_translated += folder_stats["translated"]
-        total_entries += folder_stats["total"]
+        total_translated += directory.translated
+        total_entries += directory.total
 
     if json_format:
         print(
@@ -238,7 +234,6 @@ def exec_potodo(
 
 def buffer_add(
     buffer: List[Any],
-    folder_stats: Dict[str, int],
     printed_list: List[bool],
     po_file_stats: PoFileStats,
     above: int,
@@ -262,10 +257,6 @@ def buffer_add(
         or po_file_stats.percent_translated < above
         or po_file_stats.percent_translated > below
     ):
-        # add the percentage of the file to the stats of the folder
-        folder_stats["translated"] += po_file_stats.translated_nb
-        folder_stats["total"] += po_file_stats.entries_count
-
         if not json_format:
             # don't print that file
             printed_list.append(False)
@@ -294,9 +285,6 @@ def buffer_add(
         else:
             buffer.append(po_file_stats.percentages())
 
-    # Add the percent translated to the folder statistics
-    folder_stats["translated"] += po_file_stats.translated_nb
-    folder_stats["total"] += po_file_stats.entries_count
     # Indicate to print the file
     printed_list.append(True)
 

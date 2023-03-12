@@ -113,6 +113,16 @@ class PoDirectoryStats:
         self.path = path
         self.files = files
 
+    @property
+    def translated(self) -> int:
+        """Qty of translated entries in the po files of this directory."""
+        return sum(po_file.translated_nb for po_file in self.files)
+
+    @property
+    def total(self) -> int:
+        """Qty of entries in the po files of this directory."""
+        return sum(po_file.entries_count for po_file in self.files)
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
 
