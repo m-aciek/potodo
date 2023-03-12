@@ -10,21 +10,24 @@ def repo_dir():
 
 @pytest.fixture
 def base_config(repo_dir):
+    def select(po_file) -> bool:
+        """Return True if the po_file should be displayed, False otherwise."""
+        return not (
+            po_file.percent_translated == 100
+            or po_file.percent_translated < 0
+            or po_file.percent_translated > 100
+        )
+
     return {
         "path": repo_dir,
         "exclude": ["excluded/", "excluded.po"],
-        "above": 0,
-        "below": 100,
-        "only_fuzzy": False,
         "hide_reserved": False,
         "counts": False,
-        "is_interactive": False,
-        "exclude_fuzzy": False,
-        "only_reserved": False,
-        "exclude_reserved": False,
+        "json_format": False,
+        "select": select,
         "show_reservation_dates": False,
         "no_cache": True,
+        "is_interactive": False,
         "matching_files": False,
-        "json_format": False,
         "api_url": "",
     }

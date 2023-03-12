@@ -1,39 +1,22 @@
 import logging
 import os
+from argparse import Namespace
 from pathlib import Path
-from typing import Any, List, Mapping
 
 
-def check_args(
-    path: str,
-    exclude: List[str],
-    below: int,
-    above: int,
-    verbose: int,
-    only_fuzzy: bool,
-    hide_reserved: bool,
-    counts: bool,
-    json_format: bool,
-    exclude_fuzzy: bool,
-    exclude_reserved: bool,
-    only_reserved: bool,
-    show_reservation_dates: bool,
-    no_cache: bool,
-    is_interactive: bool,
-    **kwargs: Any,
-) -> Mapping[str, Any]:
+def check_args(args: Namespace) -> None:
     # If below is lower than above, raise an error
-    if below < above:
+    if args.below < args.above:
         print("Potodo: 'below' value must be greater than 'above' value.")
         exit(1)
 
-    if json_format and is_interactive:
+    if args.json_format and args.is_interactive:
         print(
             "Potodo: Json format and interactive modes cannot be activated at the same time."
         )
         exit(1)
 
-    if is_interactive:
+    if args.is_interactive:
         try:
             import termios  # noqa
         except ImportError:
@@ -45,38 +28,33 @@ def check_args(
                 )
             )
 
-    if exclude_fuzzy and only_fuzzy:
+    if args.exclude_fuzzy and args.only_fuzzy:
         print("Potodo: Cannot pass --exclude-fuzzy and --only-fuzzy at the same time.")
         exit(1)
 
-    if exclude_reserved and only_reserved:
+    if args.exclude_reserved and args.only_reserved:
         print(
             "Potodo: Cannot pass --exclude-reserved and --only-reserved at the same time."
         )
         exit(1)
 
     # If no path is specified, use current directory
-    if not path:
-        path = os.getcwd()
+    if not args.path:
+        args.path = os.getcwd()
 
-    logging_level = None
-    if verbose:
-        if verbose == 1:
+    args.path = Path(args.path).resolve()
+
+    args.logging_level = None
+    if args.verbose:
+        if args.verbose == 1:
             # Will only show ERROR and CRITICAL
-            logging_level = logging.WARNING
-        if verbose == 2:
+            args.logging_level = logging.WARNING
+        if args.verbose == 2:
             # Will only show ERROR, CRITICAL and WARNING
-            logging_level = logging.INFO
-        if verbose >= 3:
+            args.logging_level = logging.INFO
+        if args.verbose >= 3:
             # Will show INFO WARNING ERROR DEBUG CRITICAL
-            logging_level = logging.DEBUG
+            args.logging_level = logging.DEBUG
     else:
         # Disable all logging
         logging.disable(logging.CRITICAL)
-
-    # Convert strings to `Path` objects and make them absolute
-    return {
-        "path": Path(path).resolve(),
-        "exclude": exclude,
-        "logging_level": logging_level,
-    }

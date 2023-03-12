@@ -11,7 +11,7 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoDirectoryStats, PoProjectStats
+from potodo.po_file import PoDirectoryStats, PoFileStats, PoProjectStats
 
 
 def print_dir_stats(
@@ -69,15 +69,10 @@ def scan_path(
 def non_interactive_output(
     path: Path,
     exclude: List[str],
-    above: int,
-    below: int,
-    only_fuzzy: bool,
     hide_reserved: bool,
     counts: bool,
     json_format: bool,
-    exclude_fuzzy: bool,
-    exclude_reserved: bool,
-    only_reserved: bool,
+    select: Callable[[PoFileStats], bool],
     show_reservation_dates: bool,
     no_cache: bool,
     is_interactive: bool,
@@ -89,41 +84,23 @@ def non_interactive_output(
     if json_format:
         print_po_project_as_json(
             po_project,
-            above,
-            below,
-            only_fuzzy,
-            hide_reserved,
             counts,
-            exclude_fuzzy,
-            exclude_reserved,
-            only_reserved,
+            select,
             matching_files,
         )
     else:
         print_po_project(
             po_project,
-            above,
-            below,
-            only_fuzzy,
-            hide_reserved,
             counts,
-            exclude_fuzzy,
-            exclude_reserved,
-            only_reserved,
+            select,
             matching_files,
         )
 
 
 def print_po_project(
     po_project: PoProjectStats,
-    above: int,
-    below: int,
-    only_fuzzy: bool,
-    hide_reserved: bool,
     counts: bool,
-    exclude_fuzzy: bool,
-    exclude_reserved: bool,
-    only_reserved: bool,
+    select: Callable[[PoFileStats], bool],
     matching_files: bool,
 ) -> None:
     for directory in sorted(po_project.stats_by_directory()):
@@ -132,22 +109,8 @@ def print_po_project(
         printed_list: List[bool] = []
 
         for po_file in sorted(directory.files):
-            # For each file in those files from that directory
-            if only_fuzzy and not po_file.fuzzy_entries:
-                continue
-            if exclude_fuzzy and po_file.fuzzy_entries:
-                continue
-            if (
-                po_file.percent_translated == 100
-                or po_file.percent_translated < above
-                or po_file.percent_translated > below
-            ):
-                continue
-
             # unless the offline/hide_reservation are enabled
-            if exclude_reserved and po_file.reserved_by:
-                continue
-            if only_reserved and not po_file.reserved_by:
+            if not select(po_file):
                 continue
 
             if matching_files:
@@ -174,33 +137,15 @@ def print_po_project(
 
 def print_po_project_as_json(
     po_project: PoProjectStats,
-    above: int,
-    below: int,
-    only_fuzzy: bool,
-    hide_reserved: bool,
     counts: bool,
-    exclude_fuzzy: bool,
-    exclude_reserved: bool,
-    only_reserved: bool,
+    select: Callable[[PoFileStats], bool],
     matching_files: bool,
 ) -> None:
     dir_stats: List[Any] = []
     for directory in sorted(po_project.stats_by_directory()):
         buffer: List[Any] = []
         for po_file in sorted(directory.files):
-            if only_fuzzy and not po_file.fuzzy_entries:
-                continue
-            if exclude_fuzzy and po_file.fuzzy_entries:
-                continue
-            if (
-                po_file.percent_translated == 100
-                or po_file.percent_translated < above
-                or po_file.percent_translated > below
-            ):
-                continue
-            if exclude_reserved and po_file.reserved_by:
-                continue
-            if only_reserved and not po_file.reserved_by:
+            if not select(po_file):
                 continue
             buffer.append(po_file.as_dict())
 
@@ -245,15 +190,10 @@ def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool
 def exec_potodo(
     path: Path,
     exclude: List[str],
-    above: int,
-    below: int,
-    only_fuzzy: bool,
     hide_reserved: bool,
     counts: bool,
     json_format: bool,
-    exclude_fuzzy: bool,
-    exclude_reserved: bool,
-    only_reserved: bool,
+    select: Callable[[PoFileStats], bool],
     show_reservation_dates: bool,
     no_cache: bool,
     is_interactive: bool,
@@ -265,15 +205,9 @@ def exec_potodo(
 
     :param path: The path to search into
     :param exclude: folders or files to be ignored
-    :param above: The above threshold
-    :param below: The below threshold
-    :param only_fuzzy: Should only fuzzies be printed
     :param hide_reserved: Will not show the reserved files
     :param counts: Render list with counts not percentage
     :param json_format: Format output as JSON.
-    :param exclude_fuzzy: Will exclude files with fuzzies in output.
-    :param exclude_reserved: Will print out only files that aren't reserved
-    :param only_reserved: Will print only reserved files
     :param show_reservation_dates: Will show the reservation dates
     :param no_cache: Disables cache (Cache is disabled when files are modified)
     :param is_interactive: Switches output to an interactive CLI menu
@@ -290,15 +224,10 @@ def exec_potodo(
         non_interactive_output(
             path,
             exclude,
-            above,
-            below,
-            only_fuzzy,
             hide_reserved,
             counts,
             json_format,
-            exclude_fuzzy,
-            exclude_reserved,
-            only_reserved,
+            select,
             show_reservation_dates,
             no_cache,
             is_interactive,
@@ -449,18 +378,47 @@ def main() -> None:
     )
 
     # Initialize args and check consistency
-    args = vars(parser.parse_args())
-    args.update(check_args(**args))
+    args = parser.parse_args()
+    check_args(args)
 
-    if args["logging_level"]:
-        setup_logging(args["logging_level"])
+    def select(po_file: PoFileStats) -> bool:
+        """Return True if the po_file should be displayed, False otherwise."""
+        if args.only_fuzzy and not po_file.fuzzy_entries:
+            return False
+        if args.exclude_fuzzy and po_file.fuzzy_entries:
+            return False
+        if (
+            po_file.percent_translated == 100
+            or po_file.percent_translated < args.above
+            or po_file.percent_translated > args.below
+        ):
+            return False
+
+        # unless the offline/hide_reservation are enabled
+        if args.exclude_reserved and po_file.reserved_by:
+            return False
+        if args.only_reserved and not po_file.reserved_by:
+            return False
+
+        return True
+
+    if args.logging_level:
+        setup_logging(args.logging_level)
 
     logging.info("Logging activated.")
     logging.debug("Executing potodo with args %s", args)
 
-    # Removing useless args before running the process
-    del args["verbose"]
-    del args["logging_level"]
-
     # Launch the processing itself
-    exec_potodo(**args)
+    exec_potodo(
+        args.path,
+        args.exclude,
+        args.hide_reserved,
+        args.counts,
+        args.json_format,
+        select,
+        args.show_reservation_dates,
+        args.no_cache,
+        args.is_interactive,
+        args.matching_files,
+        args.api_url,
+    )
