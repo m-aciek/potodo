@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, List, Sequence
+from typing import Any, Callable, List
 
 from gitignore_parser import rule_from_pattern
 
@@ -11,27 +11,7 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoDirectoryStats, PoFileStats, PoProjectStats
-
-
-def print_dir_stats(
-    directory: PoDirectoryStats,
-    buffer: Sequence[str],
-    printed_list: Sequence[bool],
-) -> None:
-    """This function prints the directory name, its stats and the buffer"""
-    if True in printed_list:
-        logging.debug("Printing directory %s", directory.path)
-        # If at least one of the files isn't done then print the
-        # folder stats and file(s) Each time a file is went over True
-        # or False is placed in the printed_list list.  If False is
-        # placed it means it doesnt need to be printed
-
-        folder_completion = 100 * directory.translated / directory.total
-
-        print(f"\n\n# {directory.path.name} ({folder_completion:.2f}% done)\n")
-        print("\n".join(buffer))
-    logging.debug("Not printing directory %s", directory.path)
+from potodo.po_file import PoFileStats, PoProjectStats
 
 
 def scan_path(
@@ -104,7 +84,6 @@ def print_po_project(
     for directory in sorted(po_project.stats_by_directory()):
         # For each directory and files in this directory
         buffer: List[Any] = []
-        printed_list: List[bool] = []
 
         for po_file in sorted(directory.files):
             # unless the offline/hide_reservation are enabled
@@ -113,17 +92,16 @@ def print_po_project(
 
             if matching_files:
                 print(po_file.path)
-                continue
             else:
                 buffer.append(po_file.counts() if counts else po_file.percentages())
 
-            # Indicate to print the file
-            printed_list.append(True)
-
-        # Once all files have been processed, print the dir and the files
-        # or store them into a dict to print them once all directories have
-        # been processed.
-        print_dir_stats(directory, buffer, printed_list)
+        if buffer:
+            logging.debug("Printing directory %s", directory.path)
+            folder_completion = 100 * directory.translated / directory.total
+            print(f"\n\n# {directory.path.name} ({folder_completion:.2f}% done)\n")
+            print("\n".join(buffer))
+        else:
+            logging.debug("Not printing directory %s", directory.path)
 
     if po_project.total != 0:
         total_completion = 100 * po_project.translated / po_project.total
