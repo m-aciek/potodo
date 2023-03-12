@@ -72,6 +72,7 @@ def non_interactive_output(
             po_project,
             counts,
             select,
+            show_reservation_dates,
         )
 
 
@@ -89,6 +90,7 @@ def print_po_project(
     po_project: PoProjectStats,
     counts: bool,
     select: Callable[[PoFileStats], bool],
+    show_reservation_dates: bool,
 ) -> None:
     for directory in sorted(po_project.stats_by_directory()):
         if any(select(po_file) for po_file in directory.files):
@@ -96,7 +98,10 @@ def print_po_project(
 
         for po_file in sorted(directory.files):
             if select(po_file):
-                print(po_file.counts() if counts else po_file.percentages())
+                line = [po_file.counts() if counts else po_file.percentages()]
+                if po_file.reserved_by is not None:
+                    line.append(po_file.reservation_str(show_reservation_dates))
+                print(", ".join(line))
 
     if po_project.total != 0:
         print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")

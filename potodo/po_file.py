@@ -77,8 +77,6 @@ class PoFileStats:
         parts.append(f"- {self.filename:<30} {missing:3d} to do")
         if self.fuzzy_nb:
             parts.append(f"including {self.fuzzy_nb} fuzzies")
-        if self.reserved_by is not None:
-            parts.append(self.reservation_str(with_reservation_dates))
         return ", ".join(parts) + "."
 
     def percentages(self, with_reservation_dates: bool = False) -> str:
@@ -89,8 +87,6 @@ class PoFileStats:
         ]
         if self.fuzzy_nb:
             parts.append(f"{self.fuzzy_nb} fuzzy")
-        if self.reserved_by is not None:
-            parts.append(self.reservation_str(with_reservation_dates))
         return ", ".join(parts) + "."
 
     def as_dict(self) -> Dict[str, Any]:
