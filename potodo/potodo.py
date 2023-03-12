@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
 
 from gitignore_parser import rule_from_pattern
 
@@ -118,24 +118,14 @@ def print_po_project_as_json(
     po_project: PoProjectStats,
     select: Callable[[PoFileStats], bool],
 ) -> None:
-    dir_stats: List[Any] = []
+    dir_stats: List[Dict[str, Any]] = []
     for directory in sorted(po_project.stats_by_directory()):
-        buffer: List[Any] = []
-        for po_file in sorted(directory.files):
-            if not select(po_file):
-                continue
-            buffer.append(po_file.as_dict())
-
-        # Once all files have been processed, print the dir and the files
-        # or store them into a dict to print them once all directories have
-        # been processed.
-        if buffer:
-            folder_completion = 100 * directory.translated / directory.entries
+        if any(select(po_file) for po_file in directory.files):
             dir_stats.append(
                 {
                     "name": f"{directory.path.name}/",
-                    "percent_translated": float(f"{folder_completion:.2f}"),
-                    "files": buffer,
+                    "percent_translated": directory.completion,
+                    "files": [po_file.as_dict() for po_file in sorted(directory.files)],
                 }
             )
     print(
