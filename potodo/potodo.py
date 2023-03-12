@@ -83,7 +83,6 @@ def non_interactive_output(
     if json_format:
         print_po_project_as_json(
             po_project,
-            counts,
             select,
             matching_files,
         )
@@ -136,7 +135,6 @@ def print_po_project(
 
 def print_po_project_as_json(
     po_project: PoProjectStats,
-    counts: bool,
     select: Callable[[PoFileStats], bool],
     matching_files: bool,
 ) -> None:
