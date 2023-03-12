@@ -52,6 +52,38 @@ def add_dir_stats(
         )
 
 
+def scan_path(
+    path: Path,
+    no_cache: bool,
+    hide_reserved: bool,
+    ignore_matches: Callable[[str], bool],
+    api_url: str,
+) -> PoProjectStats:
+    logging.debug("Finding po files in %s", path)
+    po_project = PoProjectStats(path, lambda file: not ignore_matches(file))
+    cache_path = path.resolve() / ".potodo" / "cache.pickle"
+
+    if no_cache:
+        logging.debug("Creating PoFileStats objects for each file without cache")
+    else:
+        po_project.read_cache(cache_path)
+
+    if not no_cache:
+        po_project.write_cache(cache_path)
+
+    if api_url:
+        issue_reservations = get_issue_reservations(hide_reserved, api_url)
+        for po_file_stats in po_project.files.values():
+            reserved_by, reservation_date = issue_reservations.get(
+                po_file_stats.filename_dir.lower(), (None, None)
+            )
+            if reserved_by and reservation_date:
+                po_file_stats.reserved_by = reserved_by
+                po_file_stats.reservation_date = reservation_date
+
+    return po_project
+
+
 def non_interactive_output(
     path: Path,
     exclude: List[str],
@@ -71,33 +103,9 @@ def non_interactive_output(
     ignore_matches: Callable[[str], bool],
     api_url: str,
 ) -> None:
+    po_project = scan_path(path, no_cache, hide_reserved, ignore_matches, api_url)
     dir_stats: List[Any] = []
-
-    logging.debug("Finding po files in %s", path)
-    po_project = PoProjectStats(path, lambda file: not ignore_matches(file))
-    cache_path = path.resolve() / ".potodo" / "cache.pickle"
-
-    if no_cache:
-        logging.debug("Creating PoFileStats objects for each file without cache")
-    else:
-        po_project.read_cache(cache_path)
-
-    po_dirs = po_project.stats_by_directory()
-
-    if not no_cache:
-        po_project.write_cache(cache_path)
-
-    if api_url:
-        issue_reservations = get_issue_reservations(hide_reserved, api_url)
-        for po_file_stats in po_project.files.values():
-            reserved_by, reservation_date = issue_reservations.get(
-                po_file_stats.filename_dir.lower(), (None, None)
-            )
-            if reserved_by and reservation_date:
-                po_file_stats.reserved_by = reserved_by
-                po_file_stats.reservation_date = reservation_date
-
-    for directory in sorted(po_dirs):
+    for directory in sorted(po_project.stats_by_directory()):
         # For each directory and files in this directory
         buffer: List[Any] = []
         printed_list: List[bool] = []
