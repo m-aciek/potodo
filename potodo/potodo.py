@@ -111,19 +111,11 @@ def non_interactive_output(
                 continue
             if exclude_fuzzy and po_file.fuzzy_entries:
                 continue
-            # If the file is completely translated,
-            # or is translated below what's requested
-            # or is translated above what's requested
             if (
                 po_file.percent_translated == 100
                 or po_file.percent_translated < above
                 or po_file.percent_translated > below
             ):
-                if not json_format:
-                    # don't print that file
-                    printed_list.append(False)
-
-                # return without adding anything to the buffer
                 continue
 
             # unless the offline/hide_reservation are enabled
