@@ -106,6 +106,37 @@ class PoFileStats:
         }
 
 
+class PoDirectoryStats:
+    """Represent a directory containing multiple `.po` files."""
+
+    def __init__(self, path: Path, files: Sequence[PoFileStats]):
+        self.path = path
+        self.files = files
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, type(self)) and self.path == other.path
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.path < other.path
+
+    def __le__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.path <= other.path
+
+    def __gt__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.path > other.path
+
+    def __ge__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.path >= other.path
+
+
 class PoProjectStats:
     """Represents a hierarchy of `.po` files."""
 
@@ -153,11 +184,13 @@ class PoProjectStats:
             self.files[path] = PoFileStats(path)
         return self.files[path]
 
-    def stats_by_directory(self) -> Dict[Path, List[PoFileStats]]:
-        return {
-            directory: [self.stats_for_file(po_file) for po_file in po_files]
+    def stats_by_directory(self) -> List[PoDirectoryStats]:
+        return [
+            PoDirectoryStats(
+                directory, [self.stats_for_file(po_file) for po_file in po_files]
+            )
             for directory, po_files in self.files_by_directory().items()
-        }
+        ]
 
     def read_cache(
         self,

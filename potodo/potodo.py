@@ -11,18 +11,18 @@ from potodo.arguments_handling import check_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoProjectStats, PoFileStats
+from potodo.po_file import PoDirectoryStats, PoFileStats, PoProjectStats
 
 
 def print_dir_stats(
-    directory: Path,
+    directory: PoDirectoryStats,
     buffer: Sequence[str],
     folder_stats: Dict[str, int],
     printed_list: Sequence[bool],
 ) -> None:
     """This function prints the directory name, its stats and the buffer"""
     if True in printed_list:
-        logging.debug("Printing directory %s", directory)
+        logging.debug("Printing directory %s", directory.path)
         # If at least one of the files isn't done then print the
         # folder stats and file(s) Each time a file is went over True
         # or False is placed in the printed_list list.  If False is
@@ -30,13 +30,13 @@ def print_dir_stats(
 
         folder_completion = 100 * folder_stats["translated"] / folder_stats["total"]
 
-        print(f"\n\n# {directory.name} ({folder_completion:.2f}% done)\n")
+        print(f"\n\n# {directory.path.name} ({folder_completion:.2f}% done)\n")
         print("\n".join(buffer))
-    logging.debug("Not printing directory %s", directory)
+    logging.debug("Not printing directory %s", directory.path)
 
 
 def add_dir_stats(
-    directory: Path,
+    directory: PoDirectoryStats,
     buffer: List[Dict[str, str]],
     folder_stats: Dict[str, int],
     printed_list: Sequence[bool],
@@ -47,7 +47,7 @@ def add_dir_stats(
         folder_completion = 100 * folder_stats["translated"] / folder_stats["total"]
         all_stats.append(
             dict(
-                name=f"{directory.name}/",
+                name=f"{directory.path.name}/",
                 percent_translated=float(f"{folder_completion:.2f}"),
                 files=buffer,
             )
@@ -79,22 +79,22 @@ def non_interactive_output(
     total_entries: int = 0
 
     logging.debug("Finding po files in %s", path)
-    po_directory = PoProjectStats(path, lambda file: not ignore_matches(file))
+    po_project = PoProjectStats(path, lambda file: not ignore_matches(file))
     cache_path = path.resolve() / ".potodo" / "cache.pickle"
 
     if no_cache:
         logging.debug("Creating PoFileStats objects for each file without cache")
     else:
-        po_directory.read_cache(cache_path)
+        po_project.read_cache(cache_path)
 
-    po_files_and_dirs = po_directory.stats_by_directory()
+    po_dirs = po_project.stats_by_directory()
 
     if not no_cache:
-        po_directory.write_cache(cache_path)
+        po_project.write_cache(cache_path)
 
     if api_url:
         issue_reservations = get_issue_reservations(hide_reserved, api_url)
-        for po_file_stats in po_directory.files.values():
+        for po_file_stats in po_project.files.values():
             reserved_by, reservation_date = issue_reservations.get(
                 po_file_stats.filename_dir.lower(), (None, None)
             )
@@ -102,13 +102,13 @@ def non_interactive_output(
                 po_file_stats.reserved_by = reserved_by
                 po_file_stats.reservation_date = reservation_date
 
-    for directory, po_files in sorted(po_files_and_dirs.items()):
+    for directory in sorted(po_dirs):
         # For each directory and files in this directory
         buffer: List[Any] = []
         folder_stats: Dict[str, int] = {"translated": 0, "total": 0}
         printed_list: List[bool] = []
 
-        for po_file in sorted(po_files):
+        for po_file in sorted(directory.files):
             # For each file in those files from that directory
             if not only_fuzzy or po_file.fuzzy_entries:
                 if exclude_fuzzy and po_file.fuzzy_entries:
