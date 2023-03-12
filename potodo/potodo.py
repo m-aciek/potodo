@@ -115,10 +115,7 @@ def print_po_project(
                 print(po_file.path)
                 continue
             else:
-                if counts:
-                    buffer.append(po_file.counts())
-                else:
-                    buffer.append(po_file.percentages())
+                buffer.append(po_file.counts() if counts else po_file.percentages())
 
             # Indicate to print the file
             printed_list.append(True)
