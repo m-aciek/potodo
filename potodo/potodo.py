@@ -98,11 +98,11 @@ def print_po_project(
 
         for po_file in sorted(directory.files):
             if select(po_file):
+                line = f"- {po_file.filename:<30} "
                 if counts:
-                    line = f"- {po_file.filename:<30} {po_file.missing:3d} to do"
+                    line += f"{po_file.missing:3d} to do"
                 else:
-                    line = (
-                        f"- {po_file.filename:<30} "
+                    line += (
                         f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
                         f" ({po_file.percent_translated:5.1f}% translated)"
                     )
