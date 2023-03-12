@@ -60,39 +60,41 @@ def non_interactive_output(
     api_url: str,
 ) -> None:
     po_project = scan_path(path, no_cache, hide_reserved, ignore_matches, api_url)
-    if json_format:
+    if matching_files:
+        print_matching_files(po_project, select)
+    elif json_format:
         print_po_project_as_json(
             po_project,
             select,
-            matching_files,
         )
     else:
         print_po_project(
             po_project,
             counts,
             select,
-            matching_files,
         )
+
+
+def print_matching_files(
+    po_project: PoProjectStats,
+    select: Callable[[PoFileStats], bool],
+) -> None:
+    for directory in sorted(po_project.stats_by_directory()):
+        for po_file in sorted(directory.files):
+            if select(po_file):
+                print(po_file.path)
 
 
 def print_po_project(
     po_project: PoProjectStats,
     counts: bool,
     select: Callable[[PoFileStats], bool],
-    matching_files: bool,
 ) -> None:
     for directory in sorted(po_project.stats_by_directory()):
-        # For each directory and files in this directory
         buffer: List[Any] = []
 
         for po_file in sorted(directory.files):
-            # unless the offline/hide_reservation are enabled
-            if not select(po_file):
-                continue
-
-            if matching_files:
-                print(po_file.path)
-            else:
+            if select(po_file):
                 buffer.append(po_file.counts() if counts else po_file.percentages())
 
         if buffer:
@@ -111,7 +113,6 @@ def print_po_project(
 def print_po_project_as_json(
     po_project: PoProjectStats,
     select: Callable[[PoFileStats], bool],
-    matching_files: bool,
 ) -> None:
     dir_stats: List[Any] = []
     for directory in sorted(po_project.stats_by_directory()):
