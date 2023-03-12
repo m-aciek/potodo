@@ -99,9 +99,11 @@ def print_po_project(
         for po_file in sorted(directory.files):
             if select(po_file):
                 line = [po_file.counts() if counts else po_file.percentages()]
+                if po_file.fuzzy_nb:
+                    line.append(f"{po_file.fuzzy_nb} fuzzy")
                 if po_file.reserved_by is not None:
                     line.append(po_file.reservation_str(show_reservation_dates))
-                print(", ".join(line))
+                print(", ".join(line) + ".")
 
     if po_project.total != 0:
         print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")

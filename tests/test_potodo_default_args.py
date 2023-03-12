@@ -136,9 +136,7 @@ class TestPotodoCLI:
         )
         assert "- file4.po                         1 to do" in output
         assert "# repository (25.00% done)" in output
-        assert (
-            "- file1.po                         2 to do, including 1 fuzzies." in output
-        )
+        assert "- file1.po                         2 to do, 1 fuzzy." in output
 
     def test_potodo_exclude_fuzzy(self):
         output = check_output(
@@ -148,10 +146,7 @@ class TestPotodoCLI:
         assert (
             "- excluded.po                      1 /   2 ( 50.0% translated)" in output
         )
-        assert (
-            "- file1.po                         2 to do, including 1 fuzzies."
-            not in output
-        )
+        assert "- file1.po                         2 to do, 1 fuzzy." not in output
 
     def test_potodo_matching_files_solo(self):
         output = check_output(
