@@ -102,10 +102,8 @@ def print_po_project(
                 if counts:
                     line += f"{po_file.missing:3d} to do"
                 else:
-                    line += (
-                        f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
-                        f" ({po_file.percent_translated:5.1f}% translated)"
-                    )
+                    line += f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
+                    line += f" ({po_file.percent_translated:5.1f}% translated)"
                 if po_file.fuzzy_nb:
                     line += f", {po_file.fuzzy_nb} fuzzy"
                 if po_file.reserved_by is not None:
