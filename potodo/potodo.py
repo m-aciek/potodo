@@ -107,45 +107,46 @@ def non_interactive_output(
 
         for po_file in sorted(directory.files):
             # For each file in those files from that directory
-            if not only_fuzzy or po_file.fuzzy_entries:
-                if exclude_fuzzy and po_file.fuzzy_entries:
-                    continue
-                # If the file is completely translated,
-                # or is translated below what's requested
-                # or is translated above what's requested
-                if (
-                    po_file.percent_translated == 100
-                    or po_file.percent_translated < above
-                    or po_file.percent_translated > below
-                ):
-                    if not json_format:
-                        # don't print that file
-                        printed_list.append(False)
+            if only_fuzzy and not po_file.fuzzy_entries:
+                continue
+            if exclude_fuzzy and po_file.fuzzy_entries:
+                continue
+            # If the file is completely translated,
+            # or is translated below what's requested
+            # or is translated above what's requested
+            if (
+                po_file.percent_translated == 100
+                or po_file.percent_translated < above
+                or po_file.percent_translated > below
+            ):
+                if not json_format:
+                    # don't print that file
+                    printed_list.append(False)
 
-                    # return without adding anything to the buffer
-                    continue
+                # return without adding anything to the buffer
+                continue
 
-                # unless the offline/hide_reservation are enabled
-                if exclude_reserved and po_file.reserved_by:
-                    continue
-                if only_reserved and not po_file.reserved_by:
-                    continue
+            # unless the offline/hide_reservation are enabled
+            if exclude_reserved and po_file.reserved_by:
+                continue
+            if only_reserved and not po_file.reserved_by:
+                continue
 
-                if matching_files:
-                    print(po_file.path)
-                    continue
-                elif json_format:
-                    # the order of the keys is the display order
-                    buffer.append(po_file.as_dict())
+            if matching_files:
+                print(po_file.path)
+                continue
+            elif json_format:
+                # the order of the keys is the display order
+                buffer.append(po_file.as_dict())
 
+            else:
+                if counts:
+                    buffer.append(po_file.counts())
                 else:
-                    if counts:
-                        buffer.append(po_file.counts())
-                    else:
-                        buffer.append(po_file.percentages())
+                    buffer.append(po_file.percentages())
 
-                # Indicate to print the file
-                printed_list.append(True)
+            # Indicate to print the file
+            printed_list.append(True)
 
         # Once all files have been processed, print the dir and the files
         # or store them into a dict to print them once all directories have
