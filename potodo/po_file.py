@@ -123,6 +123,11 @@ class PoDirectoryStats:
         """Qty of entries in the po files of this directory."""
         return sum(po_file.entries_count for po_file in self.files)
 
+    @property
+    def completion(self) -> float:
+        """Return % of completion of this directory."""
+        return 100 * self.translated / self.total
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
 
@@ -174,6 +179,11 @@ class PoProjectStats:
     def total(self) -> int:
         """Qty of entries in the po files of this directory."""
         return sum(directory.total for directory in self.stats_by_directory())
+
+    @property
+    def completion(self) -> float:
+        """Return % of completion of this project."""
+        return 100 * self.translated / self.total
 
     @staticmethod
     def allow_all(path: str) -> bool:

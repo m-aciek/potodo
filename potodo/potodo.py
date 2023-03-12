@@ -91,23 +91,15 @@ def print_po_project(
     select: Callable[[PoFileStats], bool],
 ) -> None:
     for directory in sorted(po_project.stats_by_directory()):
-        buffer: List[Any] = []
+        if any(select(po_file) for po_file in directory.files):
+            print(f"\n\n# {directory.path.name} ({directory.completion:.2f}% done)\n")
 
         for po_file in sorted(directory.files):
             if select(po_file):
-                buffer.append(po_file.counts() if counts else po_file.percentages())
-
-        if buffer:
-            logging.debug("Printing directory %s", directory.path)
-            folder_completion = 100 * directory.translated / directory.total
-            print(f"\n\n# {directory.path.name} ({folder_completion:.2f}% done)\n")
-            print("\n".join(buffer))
-        else:
-            logging.debug("Not printing directory %s", directory.path)
+                print(po_file.counts() if counts else po_file.percentages())
 
     if po_project.total != 0:
-        total_completion = 100 * po_project.translated / po_project.total
-        print(f"\n\n# TOTAL ({total_completion:.2f}% done)\n")
+        print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")
 
 
 def print_po_project_as_json(
