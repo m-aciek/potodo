@@ -46,7 +46,7 @@ class PoFileStats:
 
         self.entries_count: int = len([e for e in self.pofile if not e.obsolete])
         self.percent_translated: int = self.pofile.percent_translated()
-        self.po_file_size = len(self.pofile) - self.obsolete_nb
+        self.entries = len(self.pofile) - self.obsolete_nb
         self.filename_dir: str = self.directory + "/" + self.filename
 
     def __str__(self) -> str:
@@ -78,7 +78,7 @@ class PoFileStats:
         return {
             "name": f"{self.directory}/{self.filename.replace('.po', '')}",
             "path": str(self.path),
-            "entries": self.po_file_size,
+            "entries": self.entries,
             "fuzzies": self.fuzzy_nb,
             "translated": self.translated_nb,
             "percent_translated": self.percent_translated,
@@ -100,14 +100,14 @@ class PoDirectoryStats:
         return sum(po_file.translated_nb for po_file in self.files)
 
     @property
-    def total(self) -> int:
+    def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
         return sum(po_file.entries_count for po_file in self.files)
 
     @property
     def completion(self) -> float:
         """Return % of completion of this directory."""
-        return 100 * self.translated / self.total
+        return 100 * self.translated / self.entries
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
@@ -157,14 +157,14 @@ class PoProjectStats:
         return sum(directory.translated for directory in self.stats_by_directory())
 
     @property
-    def total(self) -> int:
+    def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
-        return sum(directory.total for directory in self.stats_by_directory())
+        return sum(directory.entries for directory in self.stats_by_directory())
 
     @property
     def completion(self) -> float:
         """Return % of completion of this project."""
-        return 100 * self.translated / self.total
+        return 100 * self.translated / self.entries
 
     @staticmethod
     def allow_all(path: str) -> bool:

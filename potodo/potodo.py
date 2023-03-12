@@ -103,7 +103,7 @@ def print_po_project(
                 else:
                     line = (
                         f"- {po_file.filename:<30} "
-                        f"{po_file.translated_nb:3d} / {po_file.po_file_size:3d}"
+                        f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
                         f" ({po_file.percent_translated:5.1f}% translated)"
                     )
                 if po_file.fuzzy_nb:
@@ -112,7 +112,7 @@ def print_po_project(
                     line += ", " + po_file.reservation_str(show_reservation_dates)
                 print(line + ".")
 
-    if po_project.total != 0:
+    if po_project.entries != 0:
         print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")
 
 
@@ -132,7 +132,7 @@ def print_po_project_as_json(
         # or store them into a dict to print them once all directories have
         # been processed.
         if buffer:
-            folder_completion = 100 * directory.translated / directory.total
+            folder_completion = 100 * directory.translated / directory.entries
             dir_stats.append(
                 {
                     "name": f"{directory.path.name}/",
