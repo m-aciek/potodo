@@ -165,6 +165,16 @@ class PoProjectStats:
         # using `.write_cache()` and `.read_cache()
         self.files: Dict[Path, PoFileStats] = {}
 
+    @property
+    def translated(self) -> int:
+        """Qty of translated entries in the po files of this directory."""
+        return sum(directory.translated for directory in self.stats_by_directory())
+
+    @property
+    def total(self) -> int:
+        """Qty of entries in the po files of this directory."""
+        return sum(directory.total for directory in self.stats_by_directory())
+
     @staticmethod
     def allow_all(path: str) -> bool:
         """Default filtering function: allow all files."""

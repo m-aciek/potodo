@@ -73,9 +73,6 @@ def non_interactive_output(
 ) -> None:
     dir_stats: List[Any] = []
 
-    total_translated: int = 0
-    total_entries: int = 0
-
     logging.debug("Finding po files in %s", path)
     po_project = PoProjectStats(path, lambda file: not ignore_matches(file))
     cache_path = path.resolve() / ".potodo" / "cache.pickle"
@@ -148,9 +145,6 @@ def non_interactive_output(
         else:
             print_dir_stats(directory, buffer, printed_list)
 
-        total_translated += directory.translated
-        total_entries += directory.total
-
     if json_format:
         print(
             json.dumps(
@@ -162,8 +156,8 @@ def non_interactive_output(
             )
         )
     else:
-        if total_entries != 0:
-            total_completion = 100 * total_translated / total_entries
+        if po_project.total != 0:
+            total_completion = 100 * po_project.translated / po_project.total
             print(f"\n\n# TOTAL ({total_completion:.2f}% done)\n")
 
 
