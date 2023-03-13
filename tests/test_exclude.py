@@ -1,8 +1,30 @@
 from pathlib import Path
 
+import pytest
+
 from potodo.potodo import main
 
 REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "repository"
+GIT_REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "git_repository"
+
+
+@pytest.mark.xfail(strict=True)
+def test_git(capsys, monkeypatch):
+    """Ensure than excluded files are **not** parsed.
+
+    Parsing excluded files can lead to surprises, here, parsing a
+    `.po` file in `.git` may not work, it may just be a branch or
+    whatever and contain a sha1 instead.
+
+    I name it dotgit instead of .git, to not scare git.
+    """
+    monkeypatch.setattr(
+        "sys.argv", ["potodo", "-p", str(GIT_REPO_DIR), "--exclude", "dotgit/"]
+    )
+    main()
+    out, err = capsys.readouterr()
+    assert not err
+    assert "file1" in out
 
 
 def test_no_exclude(capsys, monkeypatch):
