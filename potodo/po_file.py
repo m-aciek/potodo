@@ -166,12 +166,16 @@ class PoProjectStats:
     @property
     def translated(self) -> int:
         """Qty of translated entries in the po files of this directory."""
-        return sum(directory.translated for directory in self.stats_by_directory())
+        return sum(
+            directory_stats.translated for directory_stats in self.stats_by_directory()
+        )
 
     @property
     def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
-        return sum(directory.entries for directory in self.stats_by_directory())
+        return sum(
+            directory_stats.entries for directory_stats in self.stats_by_directory()
+        )
 
     @property
     def completion(self) -> float:

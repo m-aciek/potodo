@@ -46,28 +46,30 @@ def scan_path(
 
 
 def print_matching_files(po_project: PoProjectStats) -> None:
-    for directory in sorted(po_project.stats_by_directory()):
-        for po_file in sorted(directory.files_stats):
-            print(po_file.path)
+    for directory_stats in sorted(po_project.stats_by_directory()):
+        for file_stat in sorted(directory_stats.files_stats):
+            print(file_stat.path)
 
 
 def print_po_project(
     po_project: PoProjectStats, counts: bool, show_reservation_dates: bool
 ) -> None:
-    for directory in sorted(po_project.stats_by_directory()):
-        print(f"\n\n# {directory.path.name} ({directory.completion:.2f}% done)\n")
+    for directory_stats in sorted(po_project.stats_by_directory()):
+        print(
+            f"\n\n# {directory_stats.path.name} ({directory_stats.completion:.2f}% done)\n"
+        )
 
-        for po_file in sorted(directory.files_stats):
-            line = f"- {po_file.filename:<30} "
+        for file_stat in sorted(directory_stats.files_stats):
+            line = f"- {file_stat.filename:<30} "
             if counts:
-                line += f"{po_file.missing:3d} to do"
+                line += f"{file_stat.missing:3d} to do"
             else:
-                line += f"{po_file.translated:3d} / {po_file.entries:3d}"
-                line += f" ({po_file.percent_translated:5.1f}% translated)"
-            if po_file.fuzzy:
-                line += f", {po_file.fuzzy} fuzzy"
-            if po_file.reserved_by is not None:
-                line += ", " + po_file.reservation_str(show_reservation_dates)
+                line += f"{file_stat.translated:3d} / {file_stat.entries:3d}"
+                line += f" ({file_stat.percent_translated:5.1f}% translated)"
+            if file_stat.fuzzy:
+                line += f", {file_stat.fuzzy} fuzzy"
+            if file_stat.reserved_by is not None:
+                line += ", " + file_stat.reservation_str(show_reservation_dates)
             print(line + ".")
 
     if po_project.entries != 0:
@@ -75,20 +77,19 @@ def print_po_project(
 
 
 def print_po_project_as_json(po_project: PoProjectStats) -> None:
-    dir_stats: List[Dict[str, Any]] = []
-    for directory in sorted(po_project.stats_by_directory()):
-        dir_stats.append(
-            {
-                "name": f"{directory.path.name}/",
-                "percent_translated": directory.completion,
-                "files": [
-                    po_file.as_dict() for po_file in sorted(directory.files_stats)
-                ],
-            }
-        )
     print(
         json.dumps(
-            dir_stats,
+            [
+                {
+                    "name": f"{directory_stats.path.name}/",
+                    "percent_translated": directory_stats.completion,
+                    "files": [
+                        po_file.as_dict()
+                        for po_file in sorted(directory_stats.files_stats)
+                    ],
+                }
+                for directory_stats in sorted(po_project.stats_by_directory())
+            ],
             indent=4,
             separators=(",", ": "),
             sort_keys=False,
