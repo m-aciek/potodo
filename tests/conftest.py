@@ -1,3 +1,4 @@
+from contextlib import suppress
 from pathlib import Path
 
 import pytest
@@ -16,10 +17,8 @@ def run_potodo(repo_dir, capsys, monkeypatch):
         monkeypatch.setattr(
             "sys.argv", ["potodo", "--no-cache", "-p", str(repo_dir)] + argv
         )
-        try:
+        with suppress(SystemExit):
             main()
-        except SystemExit:
-            pass
         return capsys.readouterr()
 
     return run_it
