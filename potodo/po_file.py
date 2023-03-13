@@ -4,7 +4,7 @@ import os
 import pickle
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast, Set
 
 import polib
 
@@ -33,6 +33,9 @@ class PoFileStats:
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
+
+    def __hash__(self):
+        return hash(("PoFileStats", self.path))
 
     @property
     def fuzzy(self) -> int:
@@ -80,7 +83,7 @@ class PoFileStats:
 
     def __lt__(self, other: "PoFileStats") -> bool:
         """When two PoFiles are compared, their filenames are compared."""
-        return self.filename < other.filename
+        return self.path < other.path
 
     def reservation_str(self, with_reservation_dates: bool = False) -> str:
         if self.reserved_by is None:
@@ -113,6 +116,9 @@ class PoDirectoryStats:
     def __init__(self, path: Path, files_stats: Sequence[PoFileStats]):
         self.path = path
         self.files_stats = files_stats
+
+    def __repr__(self):
+        return f"<PoDirectoryStats {self.path!r} with {len(self.files_stats)} files>"
 
     @property
     def translated(self) -> int:
@@ -160,10 +166,10 @@ class PoProjectStats:
         self.path = path
         # self.files can be persisted on disk
         # using `.write_cache()` and `.read_cache()
-        self.files: List[PoFileStats] = []
+        self.files: Set[PoFileStats] = set()
 
     def filter(self, filter_func: Callable[[PoFileStats], bool]) -> None:
-        self.files = [po_file for po_file in self.files if filter_func(po_file)]
+        self.files = {po_file for po_file in self.files if filter_func(po_file)}
 
     @property
     def translated(self) -> int:
@@ -191,13 +197,14 @@ class PoProjectStats:
         """
         for path in list(self.path.rglob("*.po")):
             if PoFileStats(path) not in self.files:
-                self.files.append(PoFileStats(path))
+                self.files.add(PoFileStats(path))
 
     def stats_by_directory(self) -> List[PoDirectoryStats]:
         return [
             PoDirectoryStats(directory, list(po_files))
             for directory, po_files in itertools.groupby(
-                self.files, key=lambda po_file: po_file.path.parent
+                sorted(self.files, key=lambda po_file: po_file.path.parent),
+                key=lambda po_file: po_file.path.parent,
             )
         ]
 
@@ -221,7 +228,7 @@ class PoProjectStats:
             return
         for po_file in cast(List[PoFileStats], data["data"]):
             if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
-                self.files.append(po_file)
+                self.files.add(po_file)
 
     def write_cache(self) -> None:
         """Persists all PoFileStats to disk."""
