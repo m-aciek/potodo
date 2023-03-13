@@ -110,50 +110,6 @@ def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool
     return lambda file_path: any(r.match(file_path) for r in rules)
 
 
-def exec_potodo(
-    path: Path,
-    exclude: List[str],
-    hide_reserved: bool,
-    counts: bool,
-    json_format: bool,
-    select: Callable[[PoFileStats], bool],
-    show_reservation_dates: bool,
-    no_cache: bool,
-    is_interactive: bool,
-    matching_files: bool,
-    api_url: str,
-) -> None:
-    """
-    Will run everything based on the given parameters
-
-    :param path: The path to search into
-    :param exclude: folders or files to be ignored
-    :param hide_reserved: Will not show the reserved files
-    :param counts: Render list with counts not percentage
-    :param json_format: Format output as JSON.
-    :param show_reservation_dates: Will show the reservation dates
-    :param no_cache: Disables cache (Cache is disabled when files are modified)
-    :param is_interactive: Switches output to an interactive CLI menu
-    :param matching_files: Should the file paths be printed instead of normal output
-    :param api_url: API URL for reservation tickets on Gitea or GitHub
-    """
-
-    if is_interactive:
-        from potodo.interactive import interactive_output
-
-        ignore_matches = build_ignore_matcher(path, exclude)
-        interactive_output(path, ignore_matches)
-    else:
-        po_project = scan_path(path, no_cache, hide_reserved, api_url)
-        po_project.filter(select)
-        if matching_files:
-            print_matching_files(po_project)
-        elif json_format:
-            print_po_project_as_json(po_project)
-        else:
-            print_po_project(po_project, counts, show_reservation_dates)
-
-
 def main() -> None:
     args = parse_args()
     ignore_matches = build_ignore_matcher(args.path, args.exclude)
@@ -188,17 +144,18 @@ def main() -> None:
     logging.info("Logging activated.")
     logging.debug("Executing potodo with args %s", args)
 
-    # Launch the processing itself
-    exec_potodo(
-        args.path,
-        args.exclude,
-        args.hide_reserved,
-        args.counts,
-        args.json_format,
-        select,
-        args.show_reservation_dates,
-        args.no_cache,
-        args.is_interactive,
-        args.matching_files,
-        args.api_url,
-    )
+    if args.is_interactive:
+        from potodo.interactive import interactive_output
+
+        ignore_matches = build_ignore_matcher(args.path, args.exclude)
+        interactive_output(args.path, ignore_matches)
+        return
+
+    po_project = scan_path(args.path, args.no_cache, args.hide_reserved, args.api_url)
+    po_project.filter(select)
+    if args.matching_files:
+        print_matching_files(po_project)
+    elif args.json_format:
+        print_po_project_as_json(po_project)
+    else:
+        print_po_project(po_project, args.counts, args.show_reservation_dates)
