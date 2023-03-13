@@ -47,7 +47,7 @@ def scan_path(
 
 def print_matching_files(po_project: PoProjectStats) -> None:
     for directory in sorted(po_project.stats_by_directory()):
-        for po_file in sorted(directory.files):
+        for po_file in sorted(directory.files_stats):
             print(po_file.path)
 
 
@@ -57,7 +57,7 @@ def print_po_project(
     for directory in sorted(po_project.stats_by_directory()):
         print(f"\n\n# {directory.path.name} ({directory.completion:.2f}% done)\n")
 
-        for po_file in sorted(directory.files):
+        for po_file in sorted(directory.files_stats):
             line = f"- {po_file.filename:<30} "
             if counts:
                 line += f"{po_file.missing:3d} to do"
@@ -81,7 +81,9 @@ def print_po_project_as_json(po_project: PoProjectStats) -> None:
             {
                 "name": f"{directory.path.name}/",
                 "percent_translated": directory.completion,
-                "files": [po_file.as_dict() for po_file in sorted(directory.files)],
+                "files": [
+                    po_file.as_dict() for po_file in sorted(directory.files_stats)
+                ],
             }
         )
     print(

@@ -108,19 +108,19 @@ class PoFileStats:
 class PoDirectoryStats:
     """Represent a directory containing multiple `.po` files."""
 
-    def __init__(self, path: Path, files: Sequence[PoFileStats]):
+    def __init__(self, path: Path, files_stats: Sequence[PoFileStats]):
         self.path = path
-        self.files = files
+        self.files_stats = files_stats
 
     @property
     def translated(self) -> int:
         """Qty of translated entries in the po files of this directory."""
-        return sum(po_file.translated for po_file in self.files)
+        return sum(po_file.translated for po_file in self.files_stats)
 
     @property
     def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
-        return sum(po_file.entries for po_file in self.files)
+        return sum(po_file.entries for po_file in self.files_stats)
 
     @property
     def completion(self) -> float:
