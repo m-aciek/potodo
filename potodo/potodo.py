@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Callable, List
 
 from gitignore_parser import rule_from_pattern
 

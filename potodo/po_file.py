@@ -4,7 +4,7 @@ import os
 import pickle
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Optional, Sequence, cast, Set
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, cast
 
 import polib
 
@@ -29,12 +29,12 @@ class PoFileStats:
         self.reserved_by: Optional[str] = None
         self.reservation_date: Optional[str] = None
         self.filename_dir: str = self.directory + "/" + self.filename
-        self.stats: Dict[str, Any] = {}
+        self.stats: Dict[str, int] = {}
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(("PoFileStats", self.path))
 
     @property
@@ -76,7 +76,7 @@ class PoFileStats:
             "translated": len(pofile.translated_entries()),
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.stats:
             return f"<PoFileStats {self.path!r} {self.entries} entries>"
         return f"<PoFileStats {self.path!r} (unparsed)>"
@@ -117,7 +117,7 @@ class PoDirectoryStats:
         self.path = path
         self.files_stats = files_stats
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PoDirectoryStats {self.path!r} with {len(self.files_stats)} files>"
 
     @property
