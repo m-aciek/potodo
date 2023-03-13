@@ -147,7 +147,6 @@ def main() -> None:
     if args.is_interactive:
         from potodo.interactive import interactive_output
 
-        ignore_matches = build_ignore_matcher(args.path, args.exclude)
         interactive_output(args.path, ignore_matches)
         return
 
