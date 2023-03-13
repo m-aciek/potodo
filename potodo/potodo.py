@@ -112,6 +112,13 @@ def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool
 
 def main() -> None:
     args = parse_args()
+
+    if args.logging_level:
+        setup_logging(args.logging_level)
+
+    logging.info("Logging activated.")
+    logging.debug("Executing potodo with args %s", args)
+
     ignore_matches = build_ignore_matcher(args.path, args.exclude)
 
     def select(po_file: PoFileStats) -> bool:
@@ -137,12 +144,6 @@ def main() -> None:
             return False
 
         return True
-
-    if args.logging_level:
-        setup_logging(args.logging_level)
-
-    logging.info("Logging activated.")
-    logging.debug("Executing potodo with args %s", args)
 
     if args.is_interactive:
         from potodo.interactive import interactive_output
