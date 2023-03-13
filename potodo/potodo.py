@@ -47,28 +47,6 @@ def scan_path(
     return po_project
 
 
-def non_interactive_output(
-    path: Path,
-    hide_reserved: bool,
-    counts: bool,
-    json_format: bool,
-    select: Callable[[PoFileStats], bool],
-    show_reservation_dates: bool,
-    no_cache: bool,
-    is_interactive: bool,
-    matching_files: bool,
-    api_url: str,
-) -> None:
-    po_project = scan_path(path, no_cache, hide_reserved, api_url)
-    po_project.filter(select)
-    if matching_files:
-        print_matching_files(po_project)
-    elif json_format:
-        print_po_project_as_json(po_project)
-    else:
-        print_po_project(po_project, counts, show_reservation_dates)
-
-
 def print_matching_files(po_project: PoProjectStats) -> None:
     for directory in sorted(po_project.stats_by_directory()):
         for po_file in sorted(directory.files):
@@ -168,18 +146,14 @@ def exec_potodo(
         ignore_matches = build_ignore_matcher(path, exclude)
         interactive_output(path, ignore_matches)
     else:
-        non_interactive_output(
-            path,
-            hide_reserved,
-            counts,
-            json_format,
-            select,
-            show_reservation_dates,
-            no_cache,
-            is_interactive,
-            matching_files,
-            api_url,
-        )
+        po_project = scan_path(path, no_cache, hide_reserved, api_url)
+        po_project.filter(select)
+        if matching_files:
+            print_matching_files(po_project)
+        elif json_format:
+            print_po_project_as_json(po_project)
+        else:
+            print_po_project(po_project, counts, show_reservation_dates)
 
 
 def main() -> None:
