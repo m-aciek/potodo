@@ -167,9 +167,22 @@ class PoProjectStats:
         # self.files can be persisted on disk
         # using `.write_cache()` and `.read_cache()
         self.files: Set[PoFileStats] = set()
+        self.excluded_files: Set[PoFileStats] = set()
 
     def filter(self, filter_func: Callable[[PoFileStats], bool]) -> None:
-        self.files = {po_file for po_file in self.files if filter_func(po_file)}
+        """Filter files according to a filter function.
+
+        If filter is applied multiple times, it behave like only last
+        filter has been applied.
+        """
+        all_files = self.files | self.excluded_files
+        self.files = set()
+        self.excluded_files = set()
+        for file in all_files:
+            if filter_func(file):
+                self.files.add(file)
+            else:
+                self.excluded_files.add(file)
 
     @property
     def translated(self) -> int:
@@ -234,7 +247,7 @@ class PoProjectStats:
         """Persists all PoFileStats to disk."""
         cache_path = self.path / ".potodo" / "cache.pickle"
         os.makedirs(cache_path.parent, exist_ok=True)
-        data = {"version": VERSION, "data": self.files}
+        data = {"version": VERSION, "data": self.files | self.excluded_files}
         with NamedTemporaryFile(
             mode="wb", delete=False, dir=str(cache_path.parent), prefix=cache_path.name
         ) as tmp:
