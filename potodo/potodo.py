@@ -37,6 +37,9 @@ def scan_path(
             if reserved_by and reservation_date:
                 po_file_stats.reserved_by = reserved_by
                 po_file_stats.reservation_date = reservation_date
+            else:  # Just in case we remember it's reserved from the cache:
+                po_file_stats.reserved_by = None
+                po_file_stats.reservation_date = None
 
     return po_project
 
