@@ -1,187 +1,103 @@
-import sys
-from subprocess import check_output
-from pathlib import Path
+def test_potodo_no_args(run_potodo):
+    output = run_potodo([]).out
+    assert "# excluded (50.00% done)" in output
+    assert "# folder (33.33% done)" in output
+    assert "- excluded.po                      1 /   2 ( 50.0% translated)" in output
+    assert "- file3.po                         0 /   1 (  0.0% translated)" in output
+    assert "# repository (25.00% done)" in output
+    assert (
+        "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
+        in output
+    )
 
-HERE = Path(__file__).parent.resolve()
-FIXTURES = HERE / "fixtures"
+
+def test_potodo_exclude(run_potodo):
+    output = run_potodo(["--exclude", "excluded/", "excluded.po"]).out
+    output_short = run_potodo(["-e", "excluded/", "excluded.po"]).out
+    assert output == output_short
+    assert "# excluded (50.00% done)" not in output
+    assert (
+        "- excluded.po                      1 /   2 ( 50.0% translated)" not in output
+    )
+    assert "# repository (25.00% done)" in output
+    assert (
+        "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
+        in output
+    )
 
 
-class TestPotodoCLI:
-    def test_potodo_no_args(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "-p", str(FIXTURES)], encoding="UTF-8"
-        )
-        assert "# excluded (50.00% done)" in output
-        assert "# folder (33.33% done)" in output
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)" in output
-        )
-        assert (
-            "- file3.po                         0 /   1 (  0.0% translated)" in output
-        )
-        assert "# repository (25.00% done)" in output
-        assert (
-            "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
-            in output
-        )
+def test_potodo_above(run_potodo):
+    output = run_potodo(["--above", "40"]).out
+    output_short = run_potodo(["-a", "40"]).out
+    assert output == output_short
+    assert (
+        "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
+        not in output
+    )
+    assert "- excluded.po                      1 /   2 ( 50.0% translated)" in output
 
-    def test_potodo_exclude(self, base_config):
-        output = check_output(
-            [
-                sys.executable,
-                "-m",
-                "potodo",
-                "--exclude",
-                base_config["exclude"][0],
-                base_config["exclude"][1],
-                "-p",
-                str(FIXTURES),
-            ],
-            encoding="UTF-8",
-        )
-        output_short = check_output(
-            [
-                sys.executable,
-                "-m",
-                "potodo",
-                "-e",
-                base_config["exclude"][0],
-                base_config["exclude"][1],
-                "-p",
-                str(FIXTURES),
-            ],
-            encoding="UTF-8",
-        )
-        assert output == output_short
-        assert "# excluded (50.00% done)" not in output
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)"
-            not in output
-        )
-        assert "# repository (25.00% done)" in output
-        assert (
-            "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
-            in output
-        )
 
-    def test_potodo_above(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "--above", "40", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        output_short = check_output(
-            [sys.executable, "-m", "potodo", "-a", "40"]
-        ).decode("utf-8")
-        assert output == output_short
-        assert (
-            "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
-            not in output
-        )
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)" in output
-        )
+def test_potodo_below(run_potodo):
+    output = run_potodo(["--below", "40"]).out
+    output_short = run_potodo(["-b", "40"]).out
+    assert output == output_short
+    assert (
+        "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
+        in output
+    )
+    assert (
+        "- excluded.po                      1 /   2 ( 50.0% translated)" not in output
+    )
 
-    def test_potodo_below(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "--below", "40", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
 
-        output_short = check_output(
-            [sys.executable, "-m", "potodo", "-b", "40", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        assert output == output_short
-        assert (
-            "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
-            in output
-        )
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)"
-            not in output
-        )
+def test_potodo_onlyfuzzy(run_potodo):
+    output = run_potodo(["--only-fuzzy"]).out
+    output_short = run_potodo(["-f"]).out
+    assert output == output_short
+    assert (
+        "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
+        in output
+    )
+    assert (
+        "- excluded.po                      1 /   2 ( 50.0% translated)" not in output
+    )
 
-    def test_potodo_onlyfuzzy(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "--only-fuzzy", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        output_short = check_output(
-            [sys.executable, "-m", "potodo", "-f", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        assert output == output_short
-        assert (
-            "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
-            in output
-        )
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)"
-            not in output
-        )
 
-    def test_potodo_counts(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "--counts", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        output_short = check_output(
-            [sys.executable, "-m", "potodo", "-c", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        assert output == output_short
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)"
-            not in output
-        )
-        assert "- file4.po                         1 to do" in output
-        assert "# repository (25.00% done)" in output
-        assert "- file1.po                         2 to do, 1 fuzzy." in output
+def test_potodo_counts(run_potodo):
+    output = run_potodo(["--counts"]).out
+    output_short = run_potodo(["-c"]).out
+    assert output == output_short
+    assert (
+        "- excluded.po                      1 /   2 ( 50.0% translated)" not in output
+    )
+    assert "- file4.po                         1 to do" in output
+    assert "# repository (25.00% done)" in output
+    assert "- file1.po                         2 to do, 1 fuzzy." in output
 
-    def test_potodo_exclude_fuzzy(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "--exclude-fuzzy", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        assert (
-            "- excluded.po                      1 /   2 ( 50.0% translated)" in output
-        )
-        assert "- file1.po                         2 to do, 1 fuzzy." not in output
 
-    def test_potodo_matching_files_solo(self):
-        output = check_output(
-            [sys.executable, "-m", "potodo", "--matching-files", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        output_short = check_output(
-            [sys.executable, "-m", "potodo", "-l", "-p", str(FIXTURES)],
-            encoding="UTF-8",
-        )
-        assert output == output_short
-        assert "excluded/file4.po" in output
-        assert "folder/excluded.po" in output
-        assert "folder/file3.po" in output
-        assert "file1.po" in output
-        assert "file2.po" in output
+def test_potodo_exclude_fuzzy(run_potodo):
+    output = run_potodo(["--exclude-fuzzy"]).out
+    assert "- excluded.po                      1 /   2 ( 50.0% translated)" in output
+    assert "- file1.po                         2 to do, 1 fuzzy." not in output
 
-    def test_potodo_matching_files_fuzzy(self):
-        output = check_output(
-            [
-                sys.executable,
-                "-m",
-                "potodo",
-                "--matching-files",
-                "--only-fuzzy",
-                "-p",
-                str(FIXTURES),
-            ],
-            encoding="UTF-8",
-        )
-        output_short = check_output(
-            [sys.executable, "-m", "potodo", "-l", "-f"]
-        ).decode("utf-8")
-        assert output == output_short
-        assert "file1.po" in output
 
-    # TODO: Test hide_reserved, offline options, only_reserved, exclude_reserved, show_reservation_dates
-    # TODO: Test verbose output levels
+def test_potodo_matching_files_solo(run_potodo):
+    output = run_potodo(["--matching-files"]).out
+    output_short = run_potodo(["-l"]).out
+    assert output == output_short
+    assert "excluded/file4.po" in output
+    assert "folder/excluded.po" in output
+    assert "folder/file3.po" in output
+    assert "file1.po" in output
+    assert "file2.po" in output
+
+
+def test_potodo_matching_files_fuzzy(run_potodo):
+    output = run_potodo(["--matching-files", "--only-fuzzy"]).out
+    output_short = run_potodo(["-l", "-f"]).out
+    assert output == output_short
+    assert "file1.po" in output
+
+
+# TODO: Test hide_reserved, offline options, only_reserved, exclude_reserved, show_reservation_dates
+# TODO: Test verbose output levels

@@ -1,11 +1,8 @@
 import json
 
-from potodo.potodo import exec_potodo
 
-
-def test_txt_output(capsys, base_config):
-    exec_potodo(**base_config)
-    captured = capsys.readouterr()
+def test_txt_output(run_potodo):
+    captured = run_potodo(["--exclude", "excluded/", "excluded.po"])
 
     assert "file1.po" in captured.out
     assert "file2.po" in captured.out
@@ -16,10 +13,10 @@ def test_txt_output(capsys, base_config):
     assert "excluded" not in captured.out
 
 
-def test_output(capsys, base_config, repo_dir):
-    base_config["json_format"] = True
-    exec_potodo(**base_config)
-    output = json.loads(capsys.readouterr().out)
+def test_output(run_potodo, repo_dir):
+    output = json.loads(
+        run_potodo(["--json", "--exclude", "excluded/", "excluded.po"]).out
+    )
 
     expected_folder = {
         "name": "folder/",

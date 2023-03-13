@@ -1,8 +1,13 @@
-from potodo.potodo import exec_potodo
+from pathlib import Path
+
+from potodo.potodo import main
+
+REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "repository"
 
 
-def test_no_exclude(capsys, base_config):
-    exec_potodo(**base_config)
+def test_no_exclude(capsys, monkeypatch):
+    monkeypatch.setattr("sys.argv", ["potodo", "-p", str(REPO_DIR)])
+    main()
     out, err = capsys.readouterr()
     assert not err
     assert "file1" in out
@@ -10,9 +15,11 @@ def test_no_exclude(capsys, base_config):
     assert "file3" in out
 
 
-def test_exclude_file(capsys, base_config):
-    base_config["exclude"] = ["file*"]
-    exec_potodo(**base_config)
+def test_exclude_file(capsys, monkeypatch):
+    monkeypatch.setattr(
+        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "file*"]
+    )
+    main()
     out, err = capsys.readouterr()
     assert not err
     assert "file1" not in out
@@ -21,9 +28,11 @@ def test_exclude_file(capsys, base_config):
     assert "excluded" in out  # The only one not being named file
 
 
-def test_exclude_directory(capsys, base_config):
-    base_config["exclude"] = ["excluded/*"]
-    exec_potodo(**base_config)
+def test_exclude_directory(capsys, monkeypatch):
+    monkeypatch.setattr(
+        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "excluded/*"]
+    )
+    main()
     out, err = capsys.readouterr()
     assert not err
     assert "file1" in out
@@ -33,9 +42,11 @@ def test_exclude_directory(capsys, base_config):
     assert "excluded/" not in out
 
 
-def test_exclude_single_file(capsys, base_config):
-    base_config["exclude"] = ["file2.po"]
-    exec_potodo(**base_config)
+def test_exclude_single_file(capsys, monkeypatch):
+    monkeypatch.setattr(
+        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "file2.po"]
+    )
+    main()
     out, err = capsys.readouterr()
     assert not err
     assert "file1" in out

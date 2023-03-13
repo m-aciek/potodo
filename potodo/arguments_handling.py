@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from argparse import Namespace
 from pathlib import Path
 
@@ -7,14 +8,17 @@ from pathlib import Path
 def check_args(args: Namespace) -> None:
     # If below is lower than above, raise an error
     if args.below < args.above:
-        print("Potodo: 'below' value must be greater than 'above' value.")
-        exit(1)
+        print(
+            "Potodo: 'below' value must be greater than 'above' value.", file=sys.stderr
+        )
+        sys.exit(1)
 
     if args.json_format and args.is_interactive:
         print(
-            "Potodo: Json format and interactive modes cannot be activated at the same time."
+            "Potodo: Json format and interactive modes cannot be activated at the same time.",
+            file=sys.stderr,
         )
-        exit(1)
+        sys.exit(1)
 
     if args.is_interactive:
         try:
@@ -23,20 +27,24 @@ def check_args(args: Namespace) -> None:
             import platform
 
             print(
-                'Potodo: "{}" is not supported for interactive mode'.format(
-                    platform.system()
-                )
+                f'Potodo: "{platform.system()}" is not supported for interactive mode',
+                file=sys.stderr,
             )
+            sys.exit(1)
 
     if args.exclude_fuzzy and args.only_fuzzy:
-        print("Potodo: Cannot pass --exclude-fuzzy and --only-fuzzy at the same time.")
-        exit(1)
+        print(
+            "Potodo: Cannot pass --exclude-fuzzy and --only-fuzzy at the same time.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     if args.exclude_reserved and args.only_reserved:
         print(
-            "Potodo: Cannot pass --exclude-reserved and --only-reserved at the same time."
+            "Potodo: Cannot pass --exclude-reserved and --only-reserved at the same time.",
+            file=sys.stderr,
         )
-        exit(1)
+        sys.exit(1)
 
     # If no path is specified, use current directory
     if not args.path:
