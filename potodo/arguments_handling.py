@@ -201,17 +201,9 @@ def check_args(args: Namespace) -> None:
 
     args.path = Path(args.path).resolve()
 
-    args.logging_level = None
-    if args.verbose:
-        if args.verbose == 1:
-            # Will only show ERROR and CRITICAL
-            args.logging_level = logging.WARNING
-        if args.verbose == 2:
-            # Will only show ERROR, CRITICAL and WARNING
-            args.logging_level = logging.INFO
-        if args.verbose >= 3:
-            # Will show INFO WARNING ERROR DEBUG CRITICAL
-            args.logging_level = logging.DEBUG
-    else:
-        # Disable all logging
-        logging.disable(logging.CRITICAL)
+    try:
+        levels = [logging.CRITICAL, logging.WARNING, logging.INFO, logging.DEBUG]
+        args.logging_level = levels[args.verbose]
+    except IndexError:
+        print("Too many `-v`, what do you think you'll get?", file=sys.stderr)
+        sys.exit(1)
