@@ -15,6 +15,9 @@ class PoFileStats:
     """Statistics about a po file.
 
     Contains all the necessary information about the progress of a given po file.
+
+    Beware this file is pickled (for the cache), don't store actual
+    entries in its __dict__, just stats.
     """
 
     def __init__(self, path: Path):
@@ -22,11 +25,11 @@ class PoFileStats:
         self.path: Path = path
         self.filename: str = path.name
         self.mtime = os.path.getmtime(path)
-        self.pofile: Optional[polib.POFile] = None
         self.directory: str = self.path.parent.name
         self.reserved_by: Optional[str] = None
         self.reservation_date: Optional[str] = None
         self.filename_dir: str = self.directory + "/" + self.filename
+        self.stats: Dict[str, Any] = {}
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
@@ -34,47 +37,46 @@ class PoFileStats:
     @property
     def fuzzy(self) -> int:
         self.parse()
-        assert self.pofile
-        return len(
-            [entry for entry in self.pofile if entry.fuzzy and not entry.obsolete]
-        )
+        return self.stats["fuzzy"]
 
     @property
     def translated(self) -> int:
         self.parse()
-        assert self.pofile
-        return len(self.pofile.translated_entries())
+        return self.stats["translated"]
 
     @property
     def untranslated(self) -> int:
         self.parse()
-        assert self.pofile
-        return len(self.pofile.untranslated_entries())
+        return self.stats["untranslated"]
 
     @property
     def entries(self) -> int:
         self.parse()
-        assert self.pofile
-        return len([e for e in self.pofile if not e.obsolete])
+        return self.stats["entries"]
 
     @property
     def percent_translated(self) -> int:
         self.parse()
-        assert self.pofile
-        return self.pofile.percent_translated()
+        return self.stats["percent_translated"]
 
     def parse(self) -> None:
-        if self.pofile is None:
-            self.pofile = polib.pofile(str(self.path))
+        if self.stats:
+            return  # Stats already computed.
+        pofile = polib.pofile(str(self.path))
+        self.stats = {
+            "fuzzy": len(
+                [entry for entry in pofile if entry.fuzzy and not entry.obsolete]
+            ),
+            "percent_translated": pofile.percent_translated(),
+            "entries": len([e for e in pofile if not e.obsolete]),
+            "untranslated": len(pofile.untranslated_entries()),
+            "translated": len(pofile.translated_entries()),
+        }
 
-    def __str__(self) -> str:
-        return (
-            f"Filename: {self.filename}\n"
-            f"Fuzzy Entries: {self.fuzzy}\n"
-            f"Percent Translated: {self.percent_translated}\n"
-            f"Translated Entries: {self.translated}\n"
-            f"Untranslated Entries: {self.untranslated}"
-        )
+    def __repr__(self):
+        if self.stats:
+            return f"<PoFileStats {self.path!r} {self.entries} entries>"
+        return f"<PoFileStats {self.path!r} (unparsed)>"
 
     def __lt__(self, other: "PoFileStats") -> bool:
         """When two PoFiles are compared, their filenames are compared."""
@@ -199,14 +201,13 @@ class PoProjectStats:
             )
         ]
 
-    def read_cache(
-        self,
-        cache_path: Path = Path(".potodo/cache.pickle"),
-    ) -> None:
+    def read_cache(self) -> None:
         """Restore all PoFileStats from disk.
 
         While reading the cache, outdated entires are **not** loaded.
         """
+        cache_path = self.path / ".potodo" / "cache.pickle"
+
         logging.debug("Trying to load cache from %s", cache_path)
         try:
             with open(cache_path, "rb") as handle:
@@ -222,8 +223,9 @@ class PoProjectStats:
             if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
                 self.files.append(po_file)
 
-    def write_cache(self, cache_path: Path = Path(".potodo/cache.pickle")) -> None:
+    def write_cache(self) -> None:
         """Persists all PoFileStats to disk."""
+        cache_path = self.path / ".potodo" / "cache.pickle"
         os.makedirs(cache_path.parent, exist_ok=True)
         data = {"version": VERSION, "data": self.files}
         with NamedTemporaryFile(

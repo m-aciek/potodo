@@ -20,17 +20,13 @@ def scan_path(
 ) -> PoProjectStats:
     logging.debug("Finding po files in %s", path)
     po_project = PoProjectStats(path)
-    cache_path = path.resolve() / ".potodo" / "cache.pickle"
 
     if no_cache:
         logging.debug("Creating PoFileStats objects for each file without cache")
     else:
-        po_project.read_cache(cache_path)
+        po_project.read_cache()
 
     po_project.rescan()
-
-    if not no_cache:
-        po_project.write_cache(cache_path)
 
     if api_url and not hide_reserved:
         issue_reservations = get_issue_reservations(api_url)
@@ -161,3 +157,4 @@ def main() -> None:
         print_po_project_as_json(po_project)
     else:
         print_po_project(po_project, args.counts, args.show_reservation_dates)
+    po_project.write_cache()
