@@ -28,6 +28,9 @@ class PoFileStats:
         self.reservation_date: Optional[str] = None
         self.filename_dir: str = self.directory + "/" + self.filename
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, type(self)) and self.path == other.path
+
     @property
     def fuzzy(self) -> int:
         self.parse()
@@ -181,7 +184,7 @@ class PoProjectStats:
         This is the only function that hit the disk.
         """
         for path in list(self.path.rglob("*.po")):
-            if path not in self.files:
+            if PoFileStats(path) not in self.files:
                 self.files.append(PoFileStats(path))
 
     def stats_by_directory(self) -> List[PoDirectoryStats]:
