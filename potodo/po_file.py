@@ -132,22 +132,22 @@ class PoDirectoryStats:
 
     def __lt__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
-            return NotImplemented
+            return False
         return self.path < other.path
 
     def __le__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
-            return NotImplemented
+            return False
         return self.path <= other.path
 
     def __gt__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
-            return NotImplemented
+            return False
         return self.path > other.path
 
     def __ge__(self, other: object) -> bool:
         if not isinstance(other, type(self)):
-            return NotImplemented
+            return False
         return self.path >= other.path
 
 
