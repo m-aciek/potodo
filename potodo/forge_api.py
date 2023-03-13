@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
+from urllib.parse import urlparse
 
 import requests
 
@@ -9,7 +10,7 @@ import requests
 def get_issue_reservations(api_url: str) -> Dict[str, Tuple[Any, Any]]:
     """Will get the repository name then request all the issues and put them in a dict"""
 
-    logging.info("Getting issue reservations from git.afpy.org")
+    logging.info("Getting issue reservations from %s", urlparse(api_url).hostname)
     issues: List[Dict[Any, Any]] = []
     logging.debug("Getting %s", api_url)
     next_url = api_url
