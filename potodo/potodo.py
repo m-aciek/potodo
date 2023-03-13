@@ -18,17 +18,18 @@ def scan_path(
     path: Path,
     no_cache: bool,
     hide_reserved: bool,
-    ignore_matches: Callable[[str], bool],
     api_url: str,
 ) -> PoProjectStats:
     logging.debug("Finding po files in %s", path)
-    po_project = PoProjectStats(path, lambda file: not ignore_matches(file))
+    po_project = PoProjectStats(path)
     cache_path = path.resolve() / ".potodo" / "cache.pickle"
 
     if no_cache:
         logging.debug("Creating PoFileStats objects for each file without cache")
     else:
         po_project.read_cache(cache_path)
+
+    po_project.rescan()
 
     if not no_cache:
         po_project.write_cache(cache_path)
@@ -56,78 +57,57 @@ def non_interactive_output(
     no_cache: bool,
     is_interactive: bool,
     matching_files: bool,
-    ignore_matches: Callable[[str], bool],
     api_url: str,
 ) -> None:
-    po_project = scan_path(path, no_cache, hide_reserved, ignore_matches, api_url)
+    po_project = scan_path(path, no_cache, hide_reserved, api_url)
+    po_project.filter(select)
     if matching_files:
-        print_matching_files(po_project, select)
+        print_matching_files(po_project)
     elif json_format:
-        print_po_project_as_json(
-            po_project,
-            select,
-        )
+        print_po_project_as_json(po_project)
     else:
-        print_po_project(
-            po_project,
-            counts,
-            select,
-            show_reservation_dates,
-        )
+        print_po_project(po_project, counts, show_reservation_dates)
 
 
-def print_matching_files(
-    po_project: PoProjectStats,
-    select: Callable[[PoFileStats], bool],
-) -> None:
+def print_matching_files(po_project: PoProjectStats) -> None:
     for directory in sorted(po_project.stats_by_directory()):
         for po_file in sorted(directory.files):
-            if select(po_file):
-                print(po_file.path)
+            print(po_file.path)
 
 
 def print_po_project(
-    po_project: PoProjectStats,
-    counts: bool,
-    select: Callable[[PoFileStats], bool],
-    show_reservation_dates: bool,
+    po_project: PoProjectStats, counts: bool, show_reservation_dates: bool
 ) -> None:
     for directory in sorted(po_project.stats_by_directory()):
-        if any(select(po_file) for po_file in directory.files):
-            print(f"\n\n# {directory.path.name} ({directory.completion:.2f}% done)\n")
+        print(f"\n\n# {directory.path.name} ({directory.completion:.2f}% done)\n")
 
         for po_file in sorted(directory.files):
-            if select(po_file):
-                line = f"- {po_file.filename:<30} "
-                if counts:
-                    line += f"{po_file.missing:3d} to do"
-                else:
-                    line += f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
-                    line += f" ({po_file.percent_translated:5.1f}% translated)"
-                if po_file.fuzzy_nb:
-                    line += f", {po_file.fuzzy_nb} fuzzy"
-                if po_file.reserved_by is not None:
-                    line += ", " + po_file.reservation_str(show_reservation_dates)
-                print(line + ".")
+            line = f"- {po_file.filename:<30} "
+            if counts:
+                line += f"{po_file.missing:3d} to do"
+            else:
+                line += f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
+                line += f" ({po_file.percent_translated:5.1f}% translated)"
+            if po_file.fuzzy_nb:
+                line += f", {po_file.fuzzy_nb} fuzzy"
+            if po_file.reserved_by is not None:
+                line += ", " + po_file.reservation_str(show_reservation_dates)
+            print(line + ".")
 
     if po_project.entries != 0:
         print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")
 
 
-def print_po_project_as_json(
-    po_project: PoProjectStats,
-    select: Callable[[PoFileStats], bool],
-) -> None:
+def print_po_project_as_json(po_project: PoProjectStats) -> None:
     dir_stats: List[Dict[str, Any]] = []
     for directory in sorted(po_project.stats_by_directory()):
-        if any(select(po_file) for po_file in directory.files):
-            dir_stats.append(
-                {
-                    "name": f"{directory.path.name}/",
-                    "percent_translated": directory.completion,
-                    "files": [po_file.as_dict() for po_file in sorted(directory.files)],
-                }
-            )
+        dir_stats.append(
+            {
+                "name": f"{directory.path.name}/",
+                "percent_translated": directory.completion,
+                "files": [po_file.as_dict() for po_file in sorted(directory.files)],
+            }
+        )
     print(
         json.dumps(
             dir_stats,
@@ -182,10 +162,10 @@ def exec_potodo(
     :param api_url: API URL for reservation tickets on Gitea or GitHub
     """
 
-    ignore_matches = build_ignore_matcher(path, exclude)
     if is_interactive:
         from potodo.interactive import interactive_output
 
+        ignore_matches = build_ignore_matcher(path, exclude)
         interactive_output(path, ignore_matches)
     else:
         non_interactive_output(
@@ -198,7 +178,6 @@ def exec_potodo(
             no_cache,
             is_interactive,
             matching_files,
-            ignore_matches,
             api_url,
         )
 
@@ -347,6 +326,8 @@ def main() -> None:
     args = parser.parse_args()
     check_args(args)
 
+    ignore_matches = build_ignore_matcher(args.path, args.exclude)
+
     def select(po_file: PoFileStats) -> bool:
         """Return True if the po_file should be displayed, False otherwise."""
         if args.only_fuzzy and not po_file.fuzzy_entries:
@@ -364,6 +345,9 @@ def main() -> None:
         if args.exclude_reserved and po_file.reserved_by:
             return False
         if args.only_reserved and not po_file.reserved_by:
+            return False
+
+        if ignore_matches(str(po_file.path)):
             return False
 
         return True

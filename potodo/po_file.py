@@ -136,20 +136,16 @@ class PoDirectoryStats:
 class PoProjectStats:
     """Represents a hierarchy of `.po` files."""
 
-    def __init__(
-        self, path: Path, filter_function: Optional[Callable[[str], bool]] = None
-    ):
-        """filter_function is a function to include/exclude po files
-        or directories, it should return True for the file to be
-        included.
-        """
+    def __init__(self, path: Path):
         self.path = path
-        if filter_function is None:
-            filter_function = self.allow_all
-        self.filter_function = filter_function
         # self.files can be persisted on disk
         # using `.write_cache()` and `.read_cache()
         self.files: Dict[Path, PoFileStats] = {}
+
+    def filter(self, filter_func: Callable[[PoFileStats], bool]) -> None:
+        self.files = {
+            file: stats for file, stats in self.files.items() if filter_func(stats)
+        }
 
     @property
     def translated(self) -> int:
@@ -166,18 +162,9 @@ class PoProjectStats:
         """Return % of completion of this project."""
         return 100 * self.translated / self.entries
 
-    @staticmethod
-    def allow_all(path: str) -> bool:
-        """Default filtering function: allow all files."""
-        return True
-
     def find_all_files(self) -> List[Path]:
-        """Get all the files matching `**/*.po`.
-        File can be filtered using `self.filter_function`, see __init__.
-        """
-        return [
-            file for file in self.path.rglob("*.po") if self.filter_function(str(file))
-        ]
+        """Get all po files."""
+        return list(self.path.rglob("*.po"))
 
     def files_by_directory(self) -> Dict[Path, Set[Path]]:
         return {
@@ -185,9 +172,13 @@ class PoProjectStats:
             # We assume the output of rglob to be sorted,
             # so each 'name' is unique within groupby
             for name, files in itertools.groupby(
-                self.find_all_files(), key=lambda path: path.parent
+                self.files, key=lambda path: path.parent
             )
         }
+
+    def rescan(self) -> None:
+        for file in self.find_all_files():
+            self.stats_for_file(file)
 
     def stats_for_file(self, path: Path) -> PoFileStats:
         """Get a PoFileStats for a given Path."""
