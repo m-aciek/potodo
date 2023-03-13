@@ -4,7 +4,7 @@ import os
 import pickle
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 import polib
 
@@ -134,18 +134,16 @@ class PoDirectoryStats:
 
 
 class PoProjectStats:
-    """Represents a hierarchy of `.po` files."""
+    """Represents the root of the hierarchy of `.po` files."""
 
     def __init__(self, path: Path):
         self.path = path
         # self.files can be persisted on disk
         # using `.write_cache()` and `.read_cache()
-        self.files: Dict[Path, PoFileStats] = {}
+        self.files: List[PoFileStats] = []
 
     def filter(self, filter_func: Callable[[PoFileStats], bool]) -> None:
-        self.files = {
-            file: stats for file, stats in self.files.items() if filter_func(stats)
-        }
+        self.files = [po_file for po_file in self.files if filter_func(po_file)]
 
     @property
     def translated(self) -> int:
@@ -162,36 +160,21 @@ class PoProjectStats:
         """Return % of completion of this project."""
         return 100 * self.translated / self.entries
 
-    def find_all_files(self) -> List[Path]:
-        """Get all po files."""
-        return list(self.path.rglob("*.po"))
-
-    def files_by_directory(self) -> Dict[Path, Set[Path]]:
-        return {
-            name: set(files)
-            # We assume the output of rglob to be sorted,
-            # so each 'name' is unique within groupby
-            for name, files in itertools.groupby(
-                self.files, key=lambda path: path.parent
-            )
-        }
-
     def rescan(self) -> None:
-        for file in self.find_all_files():
-            self.stats_for_file(file)
+        """Scan disk to search for po files.
 
-    def stats_for_file(self, path: Path) -> PoFileStats:
-        """Get a PoFileStats for a given Path."""
-        if path not in self.files:
-            self.files[path] = PoFileStats(path)
-        return self.files[path]
+        This is the only function that hit the disk.
+        """
+        for path in list(self.path.rglob("*.po")):
+            if path not in self.files:
+                self.files.append(PoFileStats(path))
 
     def stats_by_directory(self) -> List[PoDirectoryStats]:
         return [
-            PoDirectoryStats(
-                directory, [self.stats_for_file(po_file) for po_file in po_files]
+            PoDirectoryStats(directory, list(po_files))
+            for directory, po_files in itertools.groupby(
+                self.files, key=lambda po_file: po_file.path.parent
             )
-            for directory, po_files in self.files_by_directory().items()
         ]
 
     def read_cache(
@@ -213,9 +196,9 @@ class PoProjectStats:
         if data.get("version") != VERSION:
             logging.info("Found old cache, ignored it.")
             return
-        for path, stats in cast(Dict[Path, PoFileStats], data["data"]).items():
-            if os.path.getmtime(path.resolve()) == stats.mtime:
-                self.files[path] = stats
+        for po_file in cast(List[PoFileStats], data["data"]):
+            if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
+                self.files.append(po_file)
 
     def write_cache(self, cache_path: Path = Path(".potodo/cache.pickle")) -> None:
         """Persists all PoFileStats to disk."""

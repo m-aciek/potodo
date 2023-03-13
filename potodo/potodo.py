@@ -36,7 +36,7 @@ def scan_path(
 
     if api_url and not hide_reserved:
         issue_reservations = get_issue_reservations(api_url)
-        for po_file_stats in po_project.files.values():
+        for po_file_stats in po_project.files:
             reserved_by, reservation_date = issue_reservations.get(
                 po_file_stats.filename_dir.lower(), (None, None)
             )
