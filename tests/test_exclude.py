@@ -1,14 +1,11 @@
 from pathlib import Path
 
-import pytest
-
 from potodo.potodo import main
 
 REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "repository"
 GIT_REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "git_repository"
 
 
-@pytest.mark.xfail(strict=True)
 def test_git(capsys, monkeypatch):
     """Ensure than excluded files are **not** parsed.
 

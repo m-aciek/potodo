@@ -22,40 +22,55 @@ class PoFileStats:
         self.path: Path = path
         self.filename: str = path.name
         self.mtime = os.path.getmtime(path)
-        self.pofile: polib.POFile = polib.pofile(str(self.path))
+        self.pofile: Optional[polib.POFile] = None
         self.directory: str = self.path.parent.name
         self.reserved_by: Optional[str] = None
         self.reservation_date: Optional[str] = None
-        self.obsolete_entries: Sequence[polib.POEntry] = self.pofile.obsolete_entries()
-        self.obsolete_nb: int = len(self.pofile.obsolete_entries())
-
-        self.fuzzy_entries: List[polib.POEntry] = [
-            entry for entry in self.pofile if entry.fuzzy and not entry.obsolete
-        ]
-        self.fuzzy_nb: int = len(self.fuzzy_entries)
-
-        self.translated_entries: Sequence[
-            polib.POEntry
-        ] = self.pofile.translated_entries()
-        self.translated_nb: int = len(self.translated_entries)
-
-        self.untranslated_entries: Sequence[
-            polib.POEntry
-        ] = self.pofile.untranslated_entries()
-        self.untranslated_nb: int = len(self.untranslated_entries)
-
-        self.entries_count: int = len([e for e in self.pofile if not e.obsolete])
-        self.percent_translated: int = self.pofile.percent_translated()
-        self.entries = len(self.pofile) - self.obsolete_nb
         self.filename_dir: str = self.directory + "/" + self.filename
+
+    @property
+    def fuzzy(self) -> int:
+        self.parse()
+        assert self.pofile
+        return len(
+            [entry for entry in self.pofile if entry.fuzzy and not entry.obsolete]
+        )
+
+    @property
+    def translated(self) -> int:
+        self.parse()
+        assert self.pofile
+        return len(self.pofile.translated_entries())
+
+    @property
+    def untranslated(self) -> int:
+        self.parse()
+        assert self.pofile
+        return len(self.pofile.untranslated_entries())
+
+    @property
+    def entries(self) -> int:
+        self.parse()
+        assert self.pofile
+        return len([e for e in self.pofile if not e.obsolete])
+
+    @property
+    def percent_translated(self) -> int:
+        self.parse()
+        assert self.pofile
+        return self.pofile.percent_translated()
+
+    def parse(self) -> None:
+        if self.pofile is None:
+            self.pofile = polib.pofile(str(self.path))
 
     def __str__(self) -> str:
         return (
             f"Filename: {self.filename}\n"
-            f"Fuzzy Entries: {self.fuzzy_entries}\n"
+            f"Fuzzy Entries: {self.fuzzy}\n"
             f"Percent Translated: {self.percent_translated}\n"
-            f"Translated Entries: {self.translated_entries}\n"
-            f"Untranslated Entries: {self.untranslated_entries}"
+            f"Translated Entries: {self.translated}\n"
+            f"Untranslated Entries: {self.untranslated}"
         )
 
     def __lt__(self, other: "PoFileStats") -> bool:
@@ -72,15 +87,15 @@ class PoFileStats:
 
     @property
     def missing(self) -> int:
-        return len(self.fuzzy_entries) + len(self.untranslated_entries)
+        return self.fuzzy + self.untranslated
 
     def as_dict(self) -> Dict[str, Any]:
         return {
             "name": f"{self.directory}/{self.filename.replace('.po', '')}",
             "path": str(self.path),
             "entries": self.entries,
-            "fuzzies": self.fuzzy_nb,
-            "translated": self.translated_nb,
+            "fuzzies": self.fuzzy,
+            "translated": self.translated,
             "percent_translated": self.percent_translated,
             "reserved_by": self.reserved_by,
             "reservation_date": self.reservation_date,
@@ -97,12 +112,12 @@ class PoDirectoryStats:
     @property
     def translated(self) -> int:
         """Qty of translated entries in the po files of this directory."""
-        return sum(po_file.translated_nb for po_file in self.files)
+        return sum(po_file.translated for po_file in self.files)
 
     @property
     def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
-        return sum(po_file.entries_count for po_file in self.files)
+        return sum(po_file.entries for po_file in self.files)
 
     @property
     def completion(self) -> float:

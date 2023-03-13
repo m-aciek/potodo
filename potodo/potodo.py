@@ -62,10 +62,10 @@ def print_po_project(
             if counts:
                 line += f"{po_file.missing:3d} to do"
             else:
-                line += f"{po_file.translated_nb:3d} / {po_file.entries:3d}"
+                line += f"{po_file.translated:3d} / {po_file.entries:3d}"
                 line += f" ({po_file.percent_translated:5.1f}% translated)"
-            if po_file.fuzzy_nb:
-                line += f", {po_file.fuzzy_nb} fuzzy"
+            if po_file.fuzzy:
+                line += f", {po_file.fuzzy} fuzzy"
             if po_file.reserved_by is not None:
                 line += ", " + po_file.reservation_str(show_reservation_dates)
             print(line + ".")
@@ -123,9 +123,11 @@ def main() -> None:
 
     def select(po_file: PoFileStats) -> bool:
         """Return True if the po_file should be displayed, False otherwise."""
-        if args.only_fuzzy and not po_file.fuzzy_entries:
+        if ignore_matches(str(po_file.path)):
             return False
-        if args.exclude_fuzzy and po_file.fuzzy_entries:
+        if args.only_fuzzy and not po_file.fuzzy:
+            return False
+        if args.exclude_fuzzy and po_file.fuzzy:
             return False
         if (
             po_file.percent_translated == 100
@@ -138,9 +140,6 @@ def main() -> None:
         if args.exclude_reserved and po_file.reserved_by:
             return False
         if args.only_reserved and not po_file.reserved_by:
-            return False
-
-        if ignore_matches(str(po_file.path)):
             return False
 
         return True
