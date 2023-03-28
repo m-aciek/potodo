@@ -3,10 +3,9 @@
 </p>
 <p align="center">
     <a href="https://woodpecker.afpy.org/AFPy/potodo"><img src="https://woodpecker.afpy.org/api/badges/AFPy/potodo/status.svg"></a>
-    <img src="https://img.shields.io/pypi/v/potodo">
-    <img src="https://img.shields.io/badge/python-v3.6+-blue.svg">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg">
-    <img src="https://img.shields.io/badge/contributions-welcome-orange.svg">
+    <img src="https://img.shields.io/pypi/v/potodo?color=green">
+    <img src="https://img.shields.io/badge/python-v3.7+-green.svg">
+    <img src="https://img.shields.io/badge/license-MIT-green.svg">
 </p>
 
 ## What is it ?
