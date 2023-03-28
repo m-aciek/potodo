@@ -1,0 +1,8 @@
+---
+
+pipeline:
+  test:
+    image: python
+    commands:
+      - python3 -m pip install tox
+      - tox run
