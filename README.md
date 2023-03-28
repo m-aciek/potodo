@@ -2,6 +2,7 @@
     <img width=60% src="https://git.afpy.org/AFPy/potodo/raw/branch/main/media/Potodo.png">
 </p>
 <p align="center">
+    <a href="https://woodpecker.afpy.org/AFPy/potodo"><img src="https://woodpecker.afpy.org/api/badges/AFPy/potodo/status.svg"></a>
     <img src="https://img.shields.io/pypi/v/potodo">
     <img src="https://img.shields.io/badge/python-v3.6+-blue.svg">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg">
