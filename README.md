@@ -27,38 +27,86 @@ pip install potodo
 
 ## Usage example
 
-```
-usage: potodo [-h] [-p path] [-e path [path ...]] [-a X] [-b X] [-f] [-u API_URL] [-n] [-c] [-j] [--exclude-fuzzy] [--exclude-reserved]
-              [--only-reserved] [--show-reservation-dates] [--no-cache] [-i] [-l] [--version] [-v]
+When ran in the [french CPython documentation
+translation](https://git.afpy.org/AFPy/python-docs-fr/) it shows:
 
-List and prettify the po files left to translate.
-
-options:
-  -h, --help            show this help message and exit
-  -p path, --path path  execute Potodo in path
-  -e path [path ...], --exclude path [path ...]
-                        gitignore-style patterns to exclude from search.
-  -a X, --above X       list all TODOs above given X% completion
-  -b X, --below X       list all TODOs below given X% completion
-  -f, --only-fuzzy      print only files marked as fuzzys
-  -u API_URL, --api-url API_URL
-                        API URL to retrieve reservation tickets (https://api.github.com/repos/ORGANISATION/REPOSITORY/issues?state=open or
-                        https://git.afpy.org/api/v1/repos/ORGANISATION/REPOSITORY/issues?state=open&type=issues)
-  -n, --no-reserved     don't print info about reserved files
-  -c, --counts          render list with the count of remaining entries (translate or review) rather than percentage done
-  -j, --json            format output as JSON
-  --exclude-fuzzy       select only files without fuzzy entries
-  --exclude-reserved    select only files that aren't reserved
-  --only-reserved       select only only reserved files
-  --show-reservation-dates
-                        show issue creation dates
-  --no-cache            Disables cache (Cache is disabled when files are modified)
-  -i, --interactive     Activates the interactive menu
-  -l, --matching-files  Suppress normal output; instead print the name of each matching po file from which output would normally have been
-                        printed.
-  --version             show program's version number and exit
-  -v, --verbose         Increases output verbosity
 ```
+$ potodo --exclude venv .venv whatsnew c-api/ distutils/
+
+# python-docs-fr (95.31% done)
+
+- bugs.po                         29 /  30 ( 96.0% translated).
+- copyright.po                     6 /   7 ( 85.0% translated), 1 fuzzy.
+- license.po                      87 /  91 ( 95.0% translated), 2 fuzzy.
+
+
+# extending (56.81% done)
+
+- building.po                     22 /  23 ( 95.0% translated), 1 fuzzy.
+- extending.po                   120 / 158 ( 75.0% translated), 8 fuzzy.
+- index.po                        11 /  12 ( 91.0% translated), 1 fuzzy.
+- newtypes.po                     38 /  89 ( 42.0% translated), 3 fuzzy.
+- newtypes_tutorial.po            31 / 123 ( 25.0% translated), 2 fuzzy.
+- windows.po                      20 /  21 ( 95.0% translated), 1 fuzzy.
+
+[...]
+
+# TOTAL (50.01% done)
+```
+
+### Handling reservations
+
+To avoid having two translators work on the same file at the same
+time, one can tell other translations that a file is being translated
+using an issue or a draft pull request.
+
+`potodo` can fetch those issues and display it. It currently work with
+Gitea and Github.
+
+For example, in a clone of
+[python-docs-fr](https://git.afpy.org/AFPy/python-docs-fr/) you can
+run:
+
+```
+$ potodo --api-url 'https://git.afpy.org/api/v1/repos/AFPy/python-docs-fr/issues?state=open&type=issues' --exclude .venv
+[...]
+# extending (56.81% done)
+
+- building.po                     22 /  23 ( 95.0% translated), 1 fuzzy, reserved by Starmania.
+- extending.po                   120 / 158 ( 75.0% translated), 8 fuzzy.
+- index.po                        11 /  12 ( 91.0% translated), 1 fuzzy.
+- newtypes.po                     38 /  89 ( 42.0% translated), 3 fuzzy.
+- newtypes_tutorial.po            31 / 123 ( 25.0% translated), 2 fuzzy.
+- windows.po                      20 /  21 ( 95.0% translated), 1 fuzzy.
+
+
+# faq (90.88% done)
+
+- extending.po                    55 /  58 ( 94.0% translated), 3 fuzzy.
+- general.po                      88 /  98 ( 89.0% translated).
+- gui.po                          16 /  17 ( 94.0% translated), 1 fuzzy, reserved by Iucounu.
+- library.po                     139 / 140 ( 99.0% translated).
+- programming.po                 340 / 389 ( 87.0% translated), 40 fuzzy.
+[...]
+```
+
+Notice the **reserved by** column.
+
+For github it would look like `--api-url 'https://api.github.com/repos/ORGANISATION/REPOSITORY/issues?state=open'`.
+
+It's a bit verbose, so maybe hide this in a Makefile or whatever, but
+this way you can tweak the parameters of the query, typically to
+filter on a label if needed.
+
+The way `potodo` maps issues to files is simple: the path of the file
+just has to be present in the issue title, so any issues like:
+
+- `I'm currently working on faq/extending.po`
+- `Je travaille sur extending/index.po`
+- `blah blah library/functions.po blah blah`
+
+will correctly match their file.
+
 
 ## Development setup
 
