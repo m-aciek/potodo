@@ -6,6 +6,9 @@ from urllib.parse import urlparse
 
 import requests
 
+TIMEOUT_CONNECT_DEFAULT = 6
+TIMEOUT_READ_DEFAULT = 60
+
 
 def get_issue_reservations(api_url: str) -> Dict[str, Tuple[Any, Any]]:
     """Will get the repository name then request all the issues and put them in a dict"""
@@ -16,14 +19,18 @@ def get_issue_reservations(api_url: str) -> Dict[str, Tuple[Any, Any]]:
     next_url = api_url
     while next_url:
         logging.debug("Getting %s", next_url)
-        resp = requests.get(next_url)
+        resp = requests.get(
+            next_url, timeout=(TIMEOUT_CONNECT_DEFAULT, TIMEOUT_READ_DEFAULT)
+        )
         if resp.status_code == 403:
             # Rate limit exceeded
             return {}
         issues.extend(resp.json())
         next_url = resp.links.get("next", {}).get("url")
 
-    resp = requests.get(api_url)
+    resp = requests.get(
+        api_url, timeout=(TIMEOUT_CONNECT_DEFAULT, TIMEOUT_READ_DEFAULT)
+    )
     if resp.status_code == 403:
         # Rate limit exceeded
         return {}
