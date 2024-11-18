@@ -148,6 +148,8 @@ def parse_args() -> argparse.Namespace:
         "have been printed.",
     )
 
+    parser.add_argument("--pot")
+
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
     )

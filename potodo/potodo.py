@@ -1,6 +1,9 @@
 import json
 import logging
+import subprocess
 from pathlib import Path
+from shutil import copytree
+from tempfile import TemporaryDirectory
 from typing import Callable, List
 
 from gitignore_parser import rule_from_pattern
@@ -159,8 +162,15 @@ def main() -> None:
         interactive_output(args.path, ignore_matches)
         return
 
-    po_project = scan_path(args.path, args.no_cache, args.hide_reserved, args.api_url)
-    po_project.filter(select)
+    if args.pot:
+        with TemporaryDirectory() as tmpdir:
+            copytree(args.path, tmpdir, dirs_exist_ok=True)
+            merge_po_with_pot_recursive(Path(tmpdir), Path(args.pot))
+            po_project = scan_path(Path(tmpdir), no_cache=True, hide_reserved=args.hide_reserved, api_url=args.api_url)
+        # TODO apply filtering
+    else:
+        po_project = scan_path(args.path, args.no_cache, args.hide_reserved, args.api_url)
+        po_project.filter(select)
     if args.matching_files:
         print_matching_files(po_project, args.show_finished)
     elif args.json_format:
@@ -170,3 +180,24 @@ def main() -> None:
             po_project, args.counts, args.show_reservation_dates, args.show_finished
         )
     po_project.write_cache()
+
+def merge_po_with_pot_recursive(po_dir, pot_dir):
+    if not po_dir.is_dir() or not pot_dir.is_dir():
+        print("Error: One or both specified directories do not exist.")
+        return
+
+    for po_path in po_dir.rglob("*.po"):
+        relative_path = po_path.relative_to(po_dir)
+        pot_path = pot_dir / relative_path.with_suffix(".pot")
+
+        if pot_path.exists():
+            try:
+                subprocess.run(
+                    ["msgmerge", "--update", "--backup=none", po_path, pot_path],
+                    check=True,
+                )
+                print(f"Merged {po_path} with {pot_path}")
+            except subprocess.CalledProcessError as e:
+                print(f"Error merging {po_path} with {pot_path}: {e}")
+        else:
+            print(f"No matching POT file for {po_path}")
