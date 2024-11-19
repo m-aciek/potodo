@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+from functools import partial
 from pathlib import Path
 from shutil import copytree
 from tempfile import TemporaryDirectory
@@ -134,7 +135,7 @@ def main() -> None:
 
     ignore_matches = build_ignore_matcher(args.path, args.exclude)
 
-    def select(po_file: PoFileStats) -> bool:
+    def select(ignore_matches: Callable[[str], bool], po_file: PoFileStats) -> bool:
         """Return True if the po_file should be displayed, False otherwise."""
         if ignore_matches(str(po_file.path)):
             return False
@@ -164,13 +165,14 @@ def main() -> None:
 
     if args.pot:
         with TemporaryDirectory() as tmpdir:
-            copytree(args.path, tmpdir, dirs_exist_ok=True)
-            merge_po_with_pot_recursive(Path(tmpdir), Path(args.pot))
-            po_project = scan_path(Path(tmpdir), no_cache=True, hide_reserved=args.hide_reserved, api_url=args.api_url)
-        # TODO apply filtering
+            po_project = merge_and_scan_path(
+                Path(args.path), Path(args.pot), Path(tmpdir), hide_reserved=args.hide_reserved, api_url=args.api_url
+            )
+            ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
+            po_project.filter(partial(select, ignore_matches))
     else:
         po_project = scan_path(args.path, args.no_cache, args.hide_reserved, args.api_url)
-        po_project.filter(select)
+        po_project.filter(partial(select, ignore_matches))
     if args.matching_files:
         print_matching_files(po_project, args.show_finished)
     elif args.json_format:
@@ -180,6 +182,11 @@ def main() -> None:
             po_project, args.counts, args.show_reservation_dates, args.show_finished
         )
     po_project.write_cache()
+
+def merge_and_scan_path(path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str) -> PoProjectStats:
+    copytree(path, tmpdir, dirs_exist_ok=True)
+    merge_po_with_pot_recursive(tmpdir, pot_path)
+    return scan_path(tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url)
 
 def merge_po_with_pot_recursive(po_dir, pot_dir):
     if not po_dir.is_dir() or not pot_dir.is_dir():
