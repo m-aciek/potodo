@@ -44,14 +44,19 @@ def scan_path(
     return po_project
 
 
-def print_matching_files(po_project: PoProjectStats) -> None:
+def print_matching_files(po_project: PoProjectStats, show_finished: bool) -> None:
     for directory_stats in sorted(po_project.stats_by_directory()):
         for file_stat in sorted(directory_stats.files_stats):
+            if not show_finished and file_stat.percent_translated == 100:
+                continue
             print(file_stat.path)
 
 
 def print_po_project(
-    po_project: PoProjectStats, counts: bool, show_reservation_dates: bool
+    po_project: PoProjectStats,
+    counts: bool,
+    show_reservation_dates: bool,
+    show_finished: bool,
 ) -> None:
     for directory_stats in sorted(po_project.stats_by_directory()):
         print(
@@ -59,6 +64,8 @@ def print_po_project(
         )
 
         for file_stat in sorted(directory_stats.files_stats):
+            if not show_finished and file_stat.percent_translated == 100:
+                continue
             line = f"- {file_stat.filename:<30} "
             if counts:
                 line += f"{file_stat.missing:3d} to do"
@@ -75,7 +82,7 @@ def print_po_project(
         print(f"\n\n# TOTAL ({po_project.completion:.2f}% done)\n")
 
 
-def print_po_project_as_json(po_project: PoProjectStats) -> None:
+def print_po_project_as_json(po_project: PoProjectStats, show_finished: bool) -> None:
     print(
         json.dumps(
             [
@@ -85,6 +92,7 @@ def print_po_project_as_json(po_project: PoProjectStats) -> None:
                     "files": [
                         po_file.as_dict()
                         for po_file in sorted(directory_stats.files_stats)
+                        if show_finished or po_file.percent_translated < 100
                     ],
                 }
                 for directory_stats in sorted(po_project.stats_by_directory())
@@ -132,8 +140,7 @@ def main() -> None:
         if args.exclude_fuzzy and po_file.fuzzy:
             return False
         if (
-            po_file.percent_translated == 100
-            or po_file.percent_translated < args.above
+            po_file.percent_translated < args.above
             or po_file.percent_translated > args.below
         ):
             return False
@@ -155,9 +162,11 @@ def main() -> None:
     po_project = scan_path(args.path, args.no_cache, args.hide_reserved, args.api_url)
     po_project.filter(select)
     if args.matching_files:
-        print_matching_files(po_project)
+        print_matching_files(po_project, args.show_finished)
     elif args.json_format:
-        print_po_project_as_json(po_project)
+        print_po_project_as_json(po_project, args.show_finished)
     else:
-        print_po_project(po_project, args.counts, args.show_reservation_dates)
+        print_po_project(
+            po_project, args.counts, args.show_reservation_dates, args.show_finished
+        )
     po_project.write_cache()

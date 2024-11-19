@@ -20,7 +20,7 @@ def test_output(run_potodo, repo_dir):
 
     expected_folder = {
         "name": "folder/",
-        "percent_translated": 0.0,
+        "percent_translated": 50.0,
         "files": [
             {
                 "name": "folder/file3",

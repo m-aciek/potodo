@@ -49,6 +49,14 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "-s",
+        "--show-finished",
+        dest="show_finished",
+        action="store_true",
+        help="show files that are fully translated",
+    )
+
+    parser.add_argument(
         "-f",
         "--only-fuzzy",
         dest="only_fuzzy",
