@@ -199,6 +199,7 @@ def merge_po_with_pot_recursive(po_dir, pot_dir):
 
         if pot_path.exists():
             try:
+                print(f"Merging {po_path} with {pot_path}")
                 subprocess.run(
                     ["msgmerge", "--update", "--backup=none", po_path, pot_path],
                     check=True,
