@@ -203,24 +203,16 @@ def merge_and_scan_path(
 
 
 def merge_po_with_pot_recursive(po_dir, pot_dir):
-    if not po_dir.is_dir() or not pot_dir.is_dir():
-        print("Error: One or both specified directories do not exist.")
-        return
-
     for po_path in po_dir.rglob("*.po"):
         relative_path = po_path.relative_to(po_dir)
         pot_path = pot_dir / relative_path.with_suffix(".pot")
 
         if pot_path.exists():
             try:
-                print(f"Merging {po_path} with {pot_path}")
                 subprocess.run(
                     ["msgmerge", "--update", "--backup=none", po_path, pot_path],
                     check=True,
                 )
-                print(f"Merged {po_path} with {pot_path}")
-            except subprocess.CalledProcessError as e:
-                print(f"Error merging {po_path} with {pot_path}: {e}")
             except OSError as e:
                 raise OSError("xgettext is required for --pot flag to run") from e
         else:
