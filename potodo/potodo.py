@@ -5,8 +5,7 @@ import subprocess
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable
-from typing import List
+from typing import Callable, List
 
 from gitignore_parser import rule_from_pattern
 
@@ -14,8 +13,7 @@ from potodo.arguments_handling import parse_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoFileStats
-from potodo.po_file import PoProjectStats
+from potodo.po_file import PoFileStats, PoProjectStats
 
 
 def scan_path(
