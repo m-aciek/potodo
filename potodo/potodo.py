@@ -201,7 +201,7 @@ def merge_and_scan_path(
     )
 
 
-def sync_po_and_pot(po_dir, pot_dir, output_dir):
+def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
     # Ensure directories exist
     if not po_dir.is_dir() or not pot_dir.is_dir():
         print("Error: One or both specified directories do not exist.")
