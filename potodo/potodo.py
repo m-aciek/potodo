@@ -1,9 +1,9 @@
 import json
 import logging
-import subprocess
 from functools import partial
 from pathlib import Path
 from shutil import copytree
+from subprocess import run
 from tempfile import TemporaryDirectory
 from typing import Callable
 from typing import List
@@ -209,7 +209,7 @@ def merge_po_with_pot_recursive(po_dir, pot_dir):
 
         if pot_path.exists():
             try:
-                subprocess.run(
+                run(
                     ["msgmerge", "--update", "--backup=none", po_path, pot_path],
                     check=True,
                 )
