@@ -207,5 +207,7 @@ def merge_po_with_pot_recursive(po_dir, pot_dir):
                 print(f"Merged {po_path} with {pot_path}")
             except subprocess.CalledProcessError as e:
                 print(f"Error merging {po_path} with {pot_path}: {e}")
+            except OSError as e:
+                raise OSError("xgettext is required for --pot flag to run") from e
         else:
             print(f"No matching POT file for {po_path}")
