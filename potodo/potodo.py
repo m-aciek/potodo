@@ -1,9 +1,9 @@
 import json
 import logging
+import shutil
+import subprocess
 from functools import partial
 from pathlib import Path
-from shutil import copytree
-from subprocess import run
 from tempfile import TemporaryDirectory
 from typing import Callable
 from typing import List
@@ -195,7 +195,7 @@ def main() -> None:
 def merge_and_scan_path(
     path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str
 ) -> PoProjectStats:
-    copytree(path, tmpdir, dirs_exist_ok=True)
+    shutil.copytree(path, tmpdir, dirs_exist_ok=True)
     merge_po_with_pot_recursive(tmpdir, pot_path)
     return scan_path(
         tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
@@ -209,11 +209,14 @@ def merge_po_with_pot_recursive(po_dir, pot_dir):
 
         if pot_path.exists():
             try:
-                run(
+                subprocess.run(
                     ["msgmerge", "--update", "--backup=none", po_path, pot_path],
                     check=True,
                 )
             except OSError as e:
                 raise OSError("xgettext is required for --pot flag to run") from e
+            except subprocess.CalledProcessError as e:
+                print(f"Error merging {po_path} with {pot_path}: {e}")
+                shutil.move(pot_path, po_path)
         else:
             print(f"No matching POT file for {po_path}")
