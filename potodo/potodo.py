@@ -220,3 +220,4 @@ def merge_po_with_pot_recursive(po_dir, pot_dir):
                 shutil.move(pot_path, po_path)
         else:
             print(f"No matching POT file for {po_path}")
+            po_path.unlink()
