@@ -195,29 +195,64 @@ def main() -> None:
 def merge_and_scan_path(
     path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str
 ) -> PoProjectStats:
-    shutil.copytree(path, tmpdir, dirs_exist_ok=True)
-    merge_po_with_pot_recursive(tmpdir, pot_path)
+    sync_po_and_pot(path, pot_path, tmpdir)
     return scan_path(
         tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
     )
 
 
-def merge_po_with_pot_recursive(po_dir, pot_dir):
+def sync_po_and_pot(po_dir, pot_dir, output_dir):
+    # Ensure directories exist
+    if not po_dir.is_dir() or not pot_dir.is_dir():
+        print("Error: One or both specified directories do not exist.")
+        return
+
+    # Create output directory if it doesn't exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Track processed POT files
+    processed_pots = set()
+
+    # Process PO files
     for po_path in po_dir.rglob("*.po"):
         relative_path = po_path.relative_to(po_dir)
         pot_path = pot_dir / relative_path.with_suffix(".pot")
+        output_po_path = output_dir / relative_path
 
         if pot_path.exists():
+            # Mark this POT file as processed
+            processed_pots.add(pot_path)
+
+            # Create output directory structure
+            output_po_path.parent.mkdir(parents=True, exist_ok=True)
+
             try:
-                subprocess.run(
-                    ["msgmerge", "--update", "--backup=none", po_path, pot_path],
-                    check=True,
-                )
-            except OSError as e:
-                raise OSError("xgettext is required for --pot flag to run") from e
-            except subprocess.CalledProcessError as e:
-                print(f"Error merging {po_path} with {pot_path}: {e}")
-                shutil.move(pot_path, po_path)
+                # Merge PO with POT
+                with open(output_po_path, "w") as output_file:
+                    subprocess.run(
+                        ["msgmerge", "--no-fuzzy-matching", po_path, pot_path],
+                        stdout=output_file,
+                        check=True,
+                    )
+                print(f"Merged {po_path} with {pot_path} -> {output_po_path}")
+            except subprocess.CalledProcessError:
+                # Replace the PO file with POT contents if merging fails
+                shutil.copy(pot_path, output_po_path)
+                print(f"Error merging {po_path}. Replaced with {pot_path}")
         else:
-            print(f"No matching POT file for {po_path}")
+            # Remove PO file if no matching POT file
             po_path.unlink()
+            print(f"No matching POT for {po_path}. Removed.")
+
+    # Process unmatched POT files
+    for pot_path in pot_dir.rglob("*.pot"):
+        if pot_path not in processed_pots:
+            relative_path = pot_path.relative_to(pot_dir)
+            output_po_path = output_dir / relative_path.with_suffix(".po")
+
+            # Create output directory structure
+            output_po_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Copy POT file as a PO file
+            shutil.copy(pot_path, output_po_path)
+            print(f"No matching PO for {pot_path}. Moved to {output_po_path} as .po.")
