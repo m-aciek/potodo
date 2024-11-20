@@ -5,7 +5,8 @@ from functools import partial
 from pathlib import Path
 from shutil import copytree
 from tempfile import TemporaryDirectory
-from typing import Callable, List
+from typing import Callable
+from typing import List
 
 from gitignore_parser import rule_from_pattern
 
@@ -13,7 +14,8 @@ from potodo.arguments_handling import parse_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
-from potodo.po_file import PoFileStats, PoProjectStats
+from potodo.po_file import PoFileStats
+from potodo.po_file import PoProjectStats
 
 
 def scan_path(
@@ -166,12 +168,18 @@ def main() -> None:
     if args.pot:
         with TemporaryDirectory() as tmpdir:
             po_project = merge_and_scan_path(
-                Path(args.path), Path(args.pot), Path(tmpdir), hide_reserved=args.hide_reserved, api_url=args.api_url
+                Path(args.path),
+                Path(args.pot),
+                Path(tmpdir),
+                hide_reserved=args.hide_reserved,
+                api_url=args.api_url,
             )
             ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
             po_project.filter(partial(select, ignore_matches))
     else:
-        po_project = scan_path(args.path, args.no_cache, args.hide_reserved, args.api_url)
+        po_project = scan_path(
+            args.path, args.no_cache, args.hide_reserved, args.api_url
+        )
         po_project.filter(partial(select, ignore_matches))
     if args.matching_files:
         print_matching_files(po_project, args.show_finished)
@@ -183,10 +191,16 @@ def main() -> None:
         )
     po_project.write_cache()
 
-def merge_and_scan_path(path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str) -> PoProjectStats:
+
+def merge_and_scan_path(
+    path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str
+) -> PoProjectStats:
     copytree(path, tmpdir, dirs_exist_ok=True)
     merge_po_with_pot_recursive(tmpdir, pot_path)
-    return scan_path(tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url)
+    return scan_path(
+        tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
+    )
+
 
 def merge_po_with_pot_recursive(po_dir, pot_dir):
     if not po_dir.is_dir() or not pot_dir.is_dir():

@@ -148,7 +148,9 @@ def parse_args() -> argparse.Namespace:
         "have been printed.",
     )
 
-    parser.add_argument("--pot", help="Source template files path to compare the progress against")
+    parser.add_argument(
+        "--pot", help="Source template files path to compare the progress against"
+    )
 
     parser.add_argument(
         "--version", action="version", version="%(prog)s " + __version__
