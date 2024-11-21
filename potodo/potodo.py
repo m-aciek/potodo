@@ -169,9 +169,9 @@ def main() -> None:
             po_project = merge_and_scan_path(
                 Path(args.path),
                 Path(args.pot),
-                Path(tmpdir),
                 hide_reserved=args.hide_reserved,
                 api_url=args.api_url,
+                tmpdir=tmpdir,
             )
             ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
             po_project.filter(partial(select, ignore_matches))
@@ -196,16 +196,16 @@ def merge_and_scan_path(
     pot_path: Path,
     hide_reserved: bool,
     api_url: str,
-    tmpdir: Optional[Path] = None,
+    tmpdir: Optional[str] = None,
 ) -> PoProjectStats:
     if not tmpdir:
         context = TemporaryDirectory()
     else:
         context = nullcontext(tmpdir)
     with context as tmpdir:
-        sync_po_and_pot(path, pot_path, tmpdir)
+        sync_po_and_pot(path, pot_path, Path(tmpdir))
         return scan_path(
-            tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
+            Path(tmpdir), no_cache=True, hide_reserved=hide_reserved, api_url=api_url
         )
 
 
