@@ -158,24 +158,29 @@ def main() -> None:
 
         return True
 
-    if args.is_interactive:
-        from potodo.interactive import interactive_output
-
-        interactive_output(args.path, ignore_matches)
-        return
-
     if args.pot:
         with TemporaryDirectory() as tmpdir:
             po_project = merge_and_scan_path(
-                Path(args.path),
+                args.path,
                 Path(args.pot),
                 hide_reserved=args.hide_reserved,
                 api_url=args.api_url,
                 tmpdir=tmpdir,
             )
             ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
+
+            if args.is_interactive:
+                from potodo.interactive import interactive_output
+
+                interactive_output(Path(tmpdir), ignore_matches)
+                return
             po_project.filter(partial(select, ignore_matches))
     else:
+        if args.is_interactive:
+            from potodo.interactive import interactive_output
+
+            interactive_output(args.path, ignore_matches)
+            return
         po_project = scan_path(
             args.path, args.no_cache, args.hide_reserved, args.api_url
         )
