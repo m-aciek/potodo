@@ -2,10 +2,11 @@ import json
 import logging
 import shutil
 import subprocess
+from contextlib import nullcontext
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from gitignore_parser import rule_from_pattern
 
@@ -191,12 +192,21 @@ def main() -> None:
 
 
 def merge_and_scan_path(
-    path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str
+    path: Path,
+    pot_path: Path,
+    hide_reserved: bool,
+    api_url: str,
+    tmpdir: Optional[Path] = None,
 ) -> PoProjectStats:
-    sync_po_and_pot(path, pot_path, tmpdir)
-    return scan_path(
-        tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
-    )
+    if not tmpdir:
+        context = TemporaryDirectory()
+    else:
+        context = nullcontext(tmpdir)
+    with context as tmpdir:
+        sync_po_and_pot(path, pot_path, tmpdir)
+        return scan_path(
+            tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
+        )
 
 
 def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
