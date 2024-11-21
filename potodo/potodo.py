@@ -238,6 +238,8 @@ def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
             except subprocess.CalledProcessError:
                 shutil.copy(pot_path, output_po_path)
                 logging.debug(f"Error merging {po_path}. Replaced with {pot_path}")
+            except OSError as e:
+                raise OSError("GNU gettext is required for --pot flag to run") from e
 
     for pot_path in pot_dir.rglob("*.pot"):
         if pot_path not in processed_pots:
