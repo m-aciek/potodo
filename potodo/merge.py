@@ -1,4 +1,5 @@
 import logging
+import platform
 import shutil
 import subprocess
 from pathlib import Path
@@ -20,7 +21,12 @@ def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
             try:
                 with open(output_po_path, "w") as output_file:
                     subprocess.run(
-                        ["msgmerge", "--no-fuzzy-matching", po_path, pot_path],
+                        [
+                            get_msgmerge_command(),
+                            "--no-fuzzy-matching",
+                            po_path,
+                            pot_path,
+                        ],
                         stdout=output_file,
                         check=True,
                     )
@@ -42,3 +48,9 @@ def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
             logging.debug(
                 f"No matching PO for {pot_path}. Moved to {output_po_path} as .po."
             )
+
+
+def get_msgmerge_command():
+    if platform.system() == "Windows":
+        return Path("C:/gettext/bin/msgmerge.exe")
+    return "msgmerge"
