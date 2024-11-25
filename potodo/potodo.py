@@ -1,11 +1,9 @@
 import json
 import logging
-import shutil
-import subprocess
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 from gitignore_parser import rule_from_pattern
 
@@ -13,6 +11,7 @@ from potodo.arguments_handling import parse_args
 from potodo.forge_api import get_issue_reservations
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
+from potodo.merge import sync_po_and_pot
 from potodo.po_file import PoFileStats, PoProjectStats
 
 
@@ -202,43 +201,3 @@ def merge_and_scan_path(
     return scan_path(
         tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
     )
-
-
-def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
-    processed_pots = set()
-
-    for po_path in po_dir.rglob("*.po"):
-        relative_path = po_path.relative_to(po_dir)
-        pot_path = pot_dir / relative_path.with_suffix(".pot")
-        output_po_path = output_dir / relative_path
-
-        if pot_path.exists():
-            processed_pots.add(pot_path)
-
-            output_po_path.parent.mkdir(parents=True, exist_ok=True)
-
-            try:
-                with open(output_po_path, "w") as output_file:
-                    subprocess.run(
-                        ["msgmerge", "--no-fuzzy-matching", po_path, pot_path],
-                        stdout=output_file,
-                        check=True,
-                    )
-                logging.debug(f"Merged {po_path} with {pot_path} -> {output_po_path}")
-            except subprocess.CalledProcessError:
-                shutil.copy(pot_path, output_po_path)
-                logging.debug(f"Error merging {po_path}. Replaced with {pot_path}")
-            except OSError as e:
-                raise OSError("GNU gettext is required for --pot flag to run") from e
-
-    for pot_path in pot_dir.rglob("*.pot"):
-        if pot_path not in processed_pots:
-            relative_path = pot_path.relative_to(pot_dir)
-            output_po_path = output_dir / relative_path.with_suffix(".po")
-
-            output_po_path.parent.mkdir(parents=True, exist_ok=True)
-
-            shutil.copy(pot_path, output_po_path)
-            logging.debug(
-                f"No matching PO for {pot_path}. Moved to {output_po_path} as .po."
-            )
