@@ -2,7 +2,6 @@ import json
 import logging
 import shutil
 import subprocess
-from contextlib import nullcontext
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -165,7 +164,7 @@ def main() -> None:
                 Path(args.pot),
                 hide_reserved=args.hide_reserved,
                 api_url=args.api_url,
-                tmpdir=tmpdir,
+                tmpdir=Path(tmpdir),
             )
             ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
 
@@ -197,21 +196,12 @@ def main() -> None:
 
 
 def merge_and_scan_path(
-    path: Path,
-    pot_path: Path,
-    hide_reserved: bool,
-    api_url: str,
-    tmpdir: Optional[str] = None,
+    path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str
 ) -> PoProjectStats:
-    if not tmpdir:
-        context = TemporaryDirectory()
-    else:
-        context = nullcontext(tmpdir)
-    with context as tmpdir:
-        sync_po_and_pot(path, pot_path, Path(tmpdir))
-        return scan_path(
-            Path(tmpdir), no_cache=True, hide_reserved=hide_reserved, api_url=api_url
-        )
+    sync_po_and_pot(path, pot_path, tmpdir)
+    return scan_path(
+        tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
+    )
 
 
 def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
