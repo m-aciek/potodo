@@ -163,7 +163,7 @@ def main() -> None:
                 Path(args.pot),
                 hide_reserved=args.hide_reserved,
                 api_url=args.api_url,
-                tmpdir=Path(tmpdir),
+                merge_path=Path(tmpdir),
             )
             ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
 
@@ -195,9 +195,9 @@ def main() -> None:
 
 
 def merge_and_scan_path(
-    path: Path, pot_path: Path, tmpdir: Path, hide_reserved: bool, api_url: str
+    path: Path, pot_path: Path, merge_path: Path, hide_reserved: bool, api_url: str
 ) -> PoProjectStats:
-    sync_po_and_pot(path, pot_path, tmpdir)
+    sync_po_and_pot(path, pot_path, merge_path)
     return scan_path(
-        tmpdir, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
+        merge_path, no_cache=True, hide_reserved=hide_reserved, api_url=api_url
     )
