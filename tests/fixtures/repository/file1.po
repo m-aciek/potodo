@@ -12,7 +12,7 @@ msgid "We should translate this eventually"
 msgstr ""
 
 #~ msgid "Hello darkness my old friend"
-#~ msgstr "Vous qui lisez cette ligne, vous êtes très beau."
+#~ msgstr "Vous qui lisez cette ligne, vous tes trs beau."
 
 #, fuzzy
 #~ msgid "I am only there to make sure"
