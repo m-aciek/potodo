@@ -1,7 +1,17 @@
+import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from potodo.merge import sync_po_and_pot
+import pytest
+
+from potodo.merge import get_msgmerge_command, sync_po_and_pot
+
+try:
+    subprocess.run([get_msgmerge_command()])
+except FileNotFoundError:
+    pytest.skip(
+        "skipping tests in an environment without GNU gettext", allow_module_level=True
+    )
 
 
 def test_merges_file_in_main_directory(repo_dir):
