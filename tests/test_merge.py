@@ -3,14 +3,6 @@ from tempfile import TemporaryDirectory
 
 from potodo.merge import sync_po_and_pot
 
-# test_merge:
-# 1. regular case of merging
-# 2. regular case of merging in a directory
-# 3. no pot, po not considered
-# 4. no pot, po in directory not considered
-# 5. pot, no po: considered empty
-# 6. pot in directory, no po: considered empty
-
 
 def test_merges_file_in_main_directory(repo_dir):
     pots_dir = repo_dir.parent / "pots"
@@ -52,5 +44,43 @@ def test_merges_a_file_in_a_subdirectory(repo_dir):
             == """#: /un/chemin/idiot.rst:420
 msgid "Incredibly useful as a tool, this potodo"
 msgstr "Incroyablement inutile comme outil, ce potodo"
+"""
+        )
+
+
+def test_skips_po_file_without_pot(repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    with TemporaryDirectory() as tmp_dir:
+        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        assert not Path(tmp_dir, "file2.po").exists()
+
+
+def test_skips_po_file_without_pot_in_a_subdirectory(repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    with TemporaryDirectory() as tmp_dir:
+        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        assert not Path(tmp_dir, "folder/file3.po").exists()
+
+
+def test_moves_pot_as_po_when_no_po(repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    with TemporaryDirectory() as tmp_dir:
+        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        assert (
+            Path(tmp_dir, "file3.po").read_text()
+            == """msgid "This string is in source, but not yet in the translation"
+msgstr ""
+"""
+        )
+
+
+def test_moves_pot_as_po_when_no_po_in_a_subdirectory(repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    with TemporaryDirectory() as tmp_dir:
+        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        assert (
+            Path(tmp_dir, "folder/file5.po").read_text()
+            == """msgid "This string is in source in a subdirectory, but not yet in the translation"
+msgstr ""
 """
         )
