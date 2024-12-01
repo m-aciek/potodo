@@ -20,17 +20,17 @@ def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
             output_po_path.parent.mkdir(parents=True, exist_ok=True)
 
             try:
-                with open(output_po_path, "w") as output_file:
-                    subprocess.run(
-                        [
-                            get_msgmerge_command(),
-                            "--no-fuzzy-matching",
-                            po_path,
-                            pot_path,
-                        ],
-                        stdout=output_file,
-                        check=True,
-                    )
+                subprocess.run(
+                    [
+                        get_msgmerge_command(),
+                        "--no-fuzzy-matching",
+                        po_path,
+                        pot_path,
+                        "-o",
+                        output_po_path,
+                    ],
+                    check=True,
+                )
                 logging.debug(f"Merged {po_path} with {pot_path} -> {output_po_path}")
             except subprocess.CalledProcessError:
                 shutil.copy(pot_path, output_po_path)
