@@ -41,3 +41,16 @@ msgstr ""
 #~ msgstr "I don't get counted as a fuzzy entry"
 """
         )
+
+
+def test_merges_a_file_in_a_subdirectory(repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    with TemporaryDirectory() as tmp_dir:
+        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        assert (
+            Path(tmp_dir, "folder/finished.po").read_text()
+            == """#: /un/chemin/idiot.rst:420
+msgid "Incredibly useful as a tool, this potodo"
+msgstr "Incroyablement inutile comme outil, ce potodo"
+"""
+        )
