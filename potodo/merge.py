@@ -3,6 +3,7 @@ import platform
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Union
 
 
 def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
@@ -50,7 +51,7 @@ def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
             )
 
 
-def get_msgmerge_command():
+def get_msgmerge_command() -> Union[str, Path]:
     if platform.system() == "Windows":
         return Path("C:/gettext/bin/msgmerge.exe")
     return "msgmerge"
