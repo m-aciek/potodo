@@ -136,6 +136,16 @@ pip install -e .
 
 ## Release History
 
+* v0.23.0
+  * Support basing progress calculations on external file structure (--pot flag) by @maciek
+* v0.22.0
+  * fix: consider finished files and hide them from output by default by @mattwang44
+  * feat: extract po files from all PR to also mark them as reserved by @fviard
+  * fix imports pre-commit hook by @maciek
+* v0.21.4
+  * CI and refactor by @mdk
+* v0.21.3
+  * Refactor by @mdk
 * v0.21.2
     * FIX: Don't miss issues (reservations) to files containing multiple dots. Contributed by @eviau.
 * v0.21.0
