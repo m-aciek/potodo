@@ -1,0 +1,2 @@
+msgid "This string is in source in a subdirectory, but not yet in the translation"
+msgstr ""

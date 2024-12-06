@@ -1,0 +1,7 @@
+#: /un/chemin/idiot.rst:69
+msgid "This is an updated dummy sentence."
+msgstr ""
+
+#: /un/chemin/idiot.rst:666
+msgid "We should translate this eventually"
+msgstr ""
