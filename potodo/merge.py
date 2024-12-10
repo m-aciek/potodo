@@ -7,6 +7,11 @@ from typing import Union
 
 
 def sync_po_and_pot(po_dir: Path, pot_dir: Path, output_dir: Path) -> None:
+    if not pot_dir.exists():
+        raise ValueError(f"POT directory {pot_dir} doesn't exist")
+    if not any(pot_dir.rglob("*.pot")):
+        raise ValueError(f"POT directory {pot_dir} doesn't contain any POT file")
+
     processed_pots = set()
 
     for po_path in po_dir.rglob("*.po"):
