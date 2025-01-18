@@ -1,6 +1,6 @@
 ---
 
-pipeline:
+steps:
   test:
     image: python
     commands:
