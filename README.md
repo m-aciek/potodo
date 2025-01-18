@@ -144,6 +144,8 @@ pip install -e .
 
 ## Release History
 
+* v0.23.2
+  * fix: support CLI for --pot flag by @maciek
 * v0.23.1
   * Raise ValueError for empty or not existent POT directory when --pot flag is used by @maciek
 * v0.23.0
