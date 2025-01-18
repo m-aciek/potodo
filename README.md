@@ -53,6 +53,14 @@ $ potodo --exclude venv .venv whatsnew c-api/ distutils/
 # TOTAL (50.01% done)
 ```
 
+### Calculate completion with POT files structure
+
+You can calculate the progress against source (template) files by using `--pot` flag.
+
+```
+$ potodo --pot ../cpython/Doc/build/gettext
+```
+
 ### Handling reservations
 
 To avoid having two translators work on the same file at the same
