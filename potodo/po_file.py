@@ -65,7 +65,7 @@ class PoFileStats:
     def parse(self) -> None:
         if self.stats:
             return  # Stats already computed.
-        pofile = polib.pofile(str(self.path))
+        pofile = polib.pofile(self.path)
         self.stats = {
             "fuzzy": len(
                 [entry for entry in pofile if entry.fuzzy and not entry.obsolete]

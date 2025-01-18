@@ -5,6 +5,4 @@ pipeline:
     image: python
     commands:
       - python3 -m pip install tox
-      - apt-get update
-      - apt-get install -y gettext
       - tox run
