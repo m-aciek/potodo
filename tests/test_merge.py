@@ -1,17 +1,7 @@
-import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pytest
-
-from potodo.merge import get_msgmerge_command, sync_po_and_pot
-
-try:
-    subprocess.run([get_msgmerge_command()])
-except FileNotFoundError:
-    pytest.skip(
-        "skipping tests in an environment without GNU gettext", allow_module_level=True
-    )
+from potodo.merge import sync_po_and_pot
 
 
 def test_merges_file_in_main_directory(repo_dir):
@@ -20,12 +10,16 @@ def test_merges_file_in_main_directory(repo_dir):
         sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
         assert (
             Path(tmp_dir, "file1.po").read_text()
-            == """#: /un/chemin/idiot.rst:69
-msgid "This is an updated dummy sentence."
+            == """#
+msgid ""
 msgstr ""
 
 #: /un/chemin/idiot.rst:666
 msgid "We should translate this eventually"
+msgstr ""
+
+#: /un/chemin/idiot.rst:69
+msgid "This is an updated dummy sentence."
 msgstr ""
 
 #~ msgid "This is a dummy sentence."
@@ -51,7 +45,11 @@ def test_merges_a_file_in_a_subdirectory(repo_dir):
         sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
         assert (
             Path(tmp_dir, "folder/finished.po").read_text()
-            == """#: /un/chemin/idiot.rst:420
+            == """#
+msgid ""
+msgstr ""
+
+#: /un/chemin/idiot.rst:420
 msgid "Incredibly useful as a tool, this potodo"
 msgstr "Incroyablement inutile comme outil, ce potodo"
 """
