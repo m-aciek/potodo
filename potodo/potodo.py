@@ -110,7 +110,6 @@ def print_po_project_as_json(po_project: PoProjectStats, show_finished: bool) ->
 
 
 def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool]:
-    path = path.resolve()
     potodo_ignore = path / ".potodoignore"
     rules = []
     if potodo_ignore.exists():
