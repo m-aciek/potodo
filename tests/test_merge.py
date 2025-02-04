@@ -8,6 +8,7 @@ def test_merges_file_in_main_directory(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
         sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        # polib adds an empty metadata https://github.com/izimobil/polib/issues/160 
         assert (
             Path(tmp_dir, "file1.po").read_text()
             == """#
