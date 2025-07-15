@@ -141,7 +141,7 @@ class PoDirectoryStats:
 
     @property
     def translated_words(self) -> int:
-        """Qty of translated entries in the po files of this directory."""
+        """Qty of translated words in the po files of this directory."""
         return sum(po_file.translated_words for po_file in self.files_stats)
 
     @property
@@ -151,7 +151,7 @@ class PoDirectoryStats:
 
     @property
     def words(self) -> int:
-        """Qty of entries in the po files of this directory."""
+        """Qty of words in the po files of this directory."""
         return sum(po_file.words for po_file in self.files_stats)
 
     @property
