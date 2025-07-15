@@ -48,6 +48,11 @@ class PoFileStats:
         return self.stats["translated"]
 
     @property
+    def translated_words(self) -> int:
+        self.parse()
+        return self.stats["translated_words"]
+
+    @property
     def untranslated(self) -> int:
         self.parse()
         return self.stats["untranslated"]
@@ -56,6 +61,11 @@ class PoFileStats:
     def entries(self) -> int:
         self.parse()
         return self.stats["entries"]
+
+    @property
+    def words(self) -> int:
+        self.parse()
+        return self.stats["words"]
 
     @property
     def percent_translated(self) -> int:
@@ -72,8 +82,12 @@ class PoFileStats:
             ),
             "percent_translated": pofile.percent_translated(),
             "entries": len([e for e in pofile if not e.obsolete]),
+            "words": sum([len(e.msgid.split()) for e in pofile if not e.obsolete]),
             "untranslated": len(pofile.untranslated_entries()),
             "translated": len(pofile.translated_entries()),
+            "translated_words": sum(
+                [len(e.msgid.split()) for e in pofile.translated_entries()]
+            ),
         }
 
     def __repr__(self) -> str:
@@ -126,14 +140,24 @@ class PoDirectoryStats:
         return sum(po_file.translated for po_file in self.files_stats)
 
     @property
+    def translated_words(self) -> int:
+        """Qty of translated entries in the po files of this directory."""
+        return sum(po_file.translated_words for po_file in self.files_stats)
+
+    @property
     def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
         return sum(po_file.entries for po_file in self.files_stats)
 
     @property
+    def words(self) -> int:
+        """Qty of entries in the po files of this directory."""
+        return sum(po_file.words for po_file in self.files_stats)
+
+    @property
     def completion(self) -> float:
         """Return % of completion of this directory."""
-        return 100 * self.translated / self.entries
+        return 100 * self.translated_words / self.words
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
