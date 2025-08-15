@@ -9,6 +9,7 @@ def test_potodo_no_args(run_potodo):
         "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
         in output
     )
+    assert "# TOTAL (40.91% done)" in output
 
 
 def test_potodo_exclude(run_potodo):

@@ -210,22 +210,37 @@ class PoProjectStats:
 
     @property
     def translated(self) -> int:
-        """Qty of translated entries in the po files of this directory."""
+        """Qty of translated entries in the po files of this project."""
         return sum(
             directory_stats.translated for directory_stats in self.stats_by_directory()
         )
 
     @property
+    def translated_words(self) -> int:
+        """Qty of translated words in the po files of this project."""
+        return sum(
+            directory_stats.translated_words
+            for directory_stats in self.stats_by_directory()
+        )
+
+    @property
     def entries(self) -> int:
-        """Qty of entries in the po files of this directory."""
+        """Qty of entries in the po files of this project."""
         return sum(
             directory_stats.entries for directory_stats in self.stats_by_directory()
         )
 
     @property
+    def words(self) -> int:
+        """Qty of words in the po files of this project."""
+        return sum(
+            directory_stats.words for directory_stats in self.stats_by_directory()
+        )
+
+    @property
     def completion(self) -> float:
         """Return % of completion of this project."""
-        return 100 * self.translated / self.entries
+        return 100 * self.translated_words / self.words
 
     def rescan(self) -> None:
         """Scan disk to search for po files.
