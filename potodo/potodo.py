@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Callable, List
 
-from gitignore_parser import rule_from_pattern
+from gitignore_parser import handle_negation, rule_from_pattern
 
 from potodo.arguments_handling import parse_args
 from potodo.forge_api import get_issue_reservations
@@ -120,7 +120,12 @@ def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool
     rules.append(rule_from_pattern(".git/", path))
     for rule in exclude:
         rules.append(rule_from_pattern(rule, path))
-    return lambda file_path: any(r.match(file_path) for r in rules)
+    if not any(r.negation for r in rules):
+        return lambda file_path: any(r.match(file_path) for r in rules)
+    else:
+        # We have negation rules. We can't use a simple "any" to evaluate them.
+        # Later rules override earlier rules.
+        return lambda file_path: handle_negation(file_path, rules)
 
 
 def main() -> None:
