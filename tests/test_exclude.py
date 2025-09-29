@@ -72,3 +72,16 @@ def test_exclude_single_file(capsys, monkeypatch):
     assert "file2" not in out
     assert "file3" in out
     assert "file4" in out
+
+
+def test_negation(capsys, monkeypatch):
+    monkeypatch.setattr(
+        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "file*", "!file2.po"]
+    )
+    main()
+    out, err = capsys.readouterr()
+    assert not err
+    assert "file1" not in out
+    assert "file2.po" in out
+    assert "file3" not in out
+    assert "excluded" in out
