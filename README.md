@@ -144,6 +144,10 @@ pip install -e .
 
 ## Release History
 
+* v0.25
+  * Handle gitignore negation by @maciek
+  * Base completion on number of words in msgids by @maciek
+  * Merge using polib by @maciek
 * v0.23.2
   * fix: support CLI for --pot flag by @maciek
 * v0.23.1
