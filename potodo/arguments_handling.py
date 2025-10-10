@@ -3,9 +3,20 @@ import logging
 import os
 import sys
 from argparse import Namespace
+from dataclasses import dataclass
 from pathlib import Path
 
 from potodo import __version__
+
+
+@dataclass
+class Filters:
+    only_fuzzy: bool
+    exclude_fuzzy: bool
+    above: float
+    below: float
+    only_reserved: bool
+    exclude_reserved: bool
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,6 +30,9 @@ def parse_args() -> argparse.Namespace:
         "--path",
         help="execute Potodo in path",
         metavar="path",
+        action="append",
+        default=[],
+        dest="paths",
     )
 
     parser.add_argument(
@@ -68,7 +82,11 @@ def parse_args() -> argparse.Namespace:
         "-u",
         "--api-url",
         help=(
-            "API URL to retrieve reservation tickets (https://api.github.com/repos/ORGANISATION/REPOSITORY/issues?state=open or https://git.afpy.org/api/v1/repos/ORGANISATION/REPOSITORY/issues?state=open&type=issues)"
+            "API URL to retrieve reservation tickets "
+            "(https://api.github.com/repos/ORGANISATION/REPOSITORY/issues?state=open "
+            "or "
+            "https://git.afpy.org/api/v1/repos/ORGANISATION/REPOSITORY/issues?"
+            "state=open&type=issues)"
         ),
     )
 
@@ -144,7 +162,8 @@ def parse_args() -> argparse.Namespace:
         "--matching-files",
         action="store_true",
         dest="matching_files",
-        help="Suppress normal output; instead print the name of each matching po file from which output would normally "
+        help="Suppress normal output; instead print the name of each matching po "
+        "file from which output would normally "
         "have been printed.",
     )
 
@@ -163,6 +182,15 @@ def parse_args() -> argparse.Namespace:
     # Initialize args and check consistency
     args = parser.parse_args()
     check_args(args)
+
+    args.filters = Filters(
+        above=args.above,
+        below=args.below,
+        exclude_fuzzy=args.exclude_fuzzy,
+        exclude_reserved=args.exclude_reserved,
+        only_reserved=args.only_reserved,
+        only_fuzzy=args.only_fuzzy,
+    )
     return args
 
 
@@ -183,7 +211,7 @@ def check_args(args: Namespace) -> None:
 
     if args.is_interactive:
         try:
-            import termios  # noqa
+            import termios  # pylint: disable=unused-import
         except ImportError:
             import platform
 
@@ -208,10 +236,10 @@ def check_args(args: Namespace) -> None:
         sys.exit(1)
 
     # If no path is specified, use current directory
-    if not args.path:
-        args.path = os.getcwd()
+    if not args.paths:
+        args.paths = [os.getcwd()]
 
-    args.path = Path(args.path).resolve()
+    args.paths = [Path(path).resolve() for path in args.paths]
 
     try:
         levels = [logging.CRITICAL, logging.WARNING, logging.INFO, logging.DEBUG]

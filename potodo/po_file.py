@@ -1,14 +1,18 @@
-import itertools
+from __future__ import annotations
+
 import logging
 import os
 import pickle
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Optional, Sequence, Set, cast
+from typing import Any, Callable, Dict, List, Optional, Set, cast
 
 import polib
+from gitignore_parser import handle_negation, rule_from_pattern
 
 from potodo import __version__ as VERSION
+from potodo.arguments_handling import Filters
+from potodo.forge_api import get_issue_reservations
 
 
 class PoFileStats:
@@ -82,13 +86,15 @@ class PoFileStats:
             ),
             "percent_translated": pofile.percent_translated(),
             "entries": len([e for e in pofile if not e.obsolete]),
-            # TODO: use pofile.total_words() when https://github.com/izimobil/polib/pull/166 is merged
-            "words": sum([len(e.msgid.split()) for e in pofile if not e.obsolete]),
+            # TODO: use pofile.total_words() when
+            #       https://github.com/izimobil/polib/pull/166 is merged
+            "words": sum(len(e.msgid.split()) for e in pofile if not e.obsolete),
             "untranslated": len(pofile.untranslated_entries()),
             "translated": len(pofile.translated_entries()),
-            # TODO: use pofile.translated_words() when https://github.com/izimobil/polib/pull/166 is merged
+            # TODO: use pofile.translated_words() when
+            #       https://github.com/izimobil/polib/pull/166 is merged
             "translated_words": sum(
-                [len(e.msgid.split()) for e in pofile.translated_entries()]
+                len(e.msgid.split()) for e in pofile.translated_entries()
             ),
         }
 
@@ -126,40 +132,243 @@ class PoFileStats:
         }
 
 
-class PoDirectoryStats:
-    """Represent a directory containing multiple `.po` files."""
+class PoDirectories(list):
+    """Collection of PoDirectory.
 
-    def __init__(self, path: Path, files_stats: Sequence[PoFileStats]):
-        self.path = path
-        self.files_stats = files_stats
+    Each PoDirectory can represent a hiearchy that have no common parent with the others.
+    """
 
-    def __repr__(self) -> str:
-        return f"<PoDirectoryStats {self.path!r} with {len(self.files_stats)} files>"
+    @classmethod
+    def from_paths(cls, paths: list[Path]) -> PoDirectories:
+        self = cls()
+        for path in paths:
+            directory = PoDirectory(path)
+            directory.scan()
+            self.append(directory)
+        return self
+
+    def fetch_issues(self, api_url) -> None:
+        for directory in self:
+            directory.fetch_issues(api_url)
 
     @property
-    def translated(self) -> int:
-        """Qty of translated entries in the po files of this directory."""
-        return sum(po_file.translated for po_file in self.files_stats)
+    def subdirectories(self) -> list[PoDirectory]:
+        """Behave like PoDirectory's .subdirectories."""
+        return self
+
+    @property
+    def immediate_files(self) -> set[PoFileStats]:
+        """Behave like PoDirectory's .subdirectories."""
+        return set()
 
     @property
     def translated_words(self) -> int:
         """Qty of translated words in the po files of this directory."""
-        return sum(po_file.translated_words for po_file in self.files_stats)
+        return sum(po_dir.translated_words for po_dir in self)
 
     @property
     def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
-        return sum(po_file.entries for po_file in self.files_stats)
+        return sum(po_dir.entries for po_dir in self)
 
     @property
     def words(self) -> int:
         """Qty of words in the po files of this directory."""
-        return sum(po_file.words for po_file in self.files_stats)
+        return sum(po_dir.words for po_dir in self)
 
     @property
     def completion(self) -> float:
         """Return % of completion of this directory."""
-        return 100 * self.translated_words / self.words
+        try:
+            return 100 * self.translated_words / self.words
+        except ZeroDivisionError:
+            return 0
+
+    def filter(self, filters: Filters, exclude: list[str]) -> None:
+        for directory in self:
+            directory.filter(filters, exclude)
+
+
+class PoDirectory:
+    """Represents the root of the hierarchy of `.po` files."""
+
+    def __init__(self, path: Path, use_cache=True):
+        self.path = path
+        self.files: Set[PoFileStats] = set()
+        self.excluded_files: Set[PoFileStats] = set()
+        self.use_cache = use_cache
+        self.ignore_matcher: Callable[[str], bool] | None = None
+
+    def _parse_potodoignore(self, exclude: List[str]) -> Callable[[str], bool]:
+        rules = []
+        potodo_ignore = self.path / ".potodoignore"
+        if potodo_ignore.exists():
+            for line in potodo_ignore.read_text().splitlines():
+                rule = rule_from_pattern(line, self.path)
+                if rule:
+                    rules.append(rule)
+        rules.append(rule_from_pattern(".git/", self.path))
+        for rule in exclude:
+            rules.append(rule_from_pattern(rule, self.path))
+        if not any(r.negation for r in rules):
+            return lambda file_path: any(r.match(file_path) for r in rules)
+        # We have negation rules. We can't use a simple "any" to evaluate them.
+        # Later rules override earlier rules.
+        return lambda file_path: handle_negation(file_path, rules)
+
+    def _select(self, po_file: PoFileStats, filters: Filters) -> bool:
+        """Return True if the po_file should be displayed, False otherwise."""
+        assert self.ignore_matcher
+
+        if self.ignore_matcher(str(po_file.path)):
+            return False
+        if filters.only_fuzzy and not po_file.fuzzy:
+            return False
+        if filters.exclude_fuzzy and po_file.fuzzy:
+            return False
+        if (
+            po_file.percent_translated < filters.above
+            or po_file.percent_translated > filters.below
+        ):
+            return False
+
+        # unless the offline/hide_reservation are enabled
+        if filters.exclude_reserved and po_file.reserved_by:
+            return False
+        if filters.only_reserved and not po_file.reserved_by:
+            return False
+
+        return True
+
+    def filter(self, filters: Filters, exclude: List[str]) -> None:
+        """Filter files according to a filter function.
+
+        If filter is applied multiple times, it behave like only last
+        filter has been applied.
+        """
+
+        if self.ignore_matcher is None:
+            self.ignore_matcher = self._parse_potodoignore(exclude)
+
+        all_files = self.files | self.excluded_files
+        self.files = set()
+        self.excluded_files = set()
+        for file in all_files:
+            if self._select(file, filters):
+                self.files.add(file)
+            else:
+                self.excluded_files.add(file)
+
+    def scan(self) -> None:
+        """Scan disk to search for po files.
+
+        This is the only function that hit the disk.
+        """
+        if self.use_cache:
+            self._read_cache()
+        for file in self.path.rglob("*.po"):
+            if PoFileStats(file) not in self.files:
+                self.files.add(PoFileStats(file))
+        if self.use_cache:
+            self._write_cache()
+
+    @property
+    def subdirectories(self) -> list[PoDirectory]:
+        subdirectories = [
+            PoDirectory(dir, use_cache=self.use_cache)
+            for dir in self.path.iterdir()
+            if dir.is_dir() and not dir.name.startswith(".")
+        ]
+        for subdirectory in subdirectories:
+            files = [file for file in subdirectory.path.iterdir() if file.is_file()]
+            subdirectory.files = set(
+                po_file for po_file in self.files if po_file.path in files
+            )
+        return subdirectories
+
+    @property
+    def immediate_files(self) -> set[PoFileStats]:
+        """Files in this directory (not its descendents)."""
+        files = [file for file in self.path.iterdir() if file.is_file()]
+        return set(po_file for po_file in self.files if po_file.path in files)
+
+    def _read_cache(self) -> None:
+        """Restore all PoFileStats from disk.
+
+        While reading the cache, outdated entires are **not** loaded.
+        """
+        cache_path = self.path / ".potodo" / "cache.pickle"
+
+        logging.debug("Trying to load cache from %s", cache_path)
+        try:
+            with open(cache_path, "rb") as handle:
+                data = pickle.load(handle)
+        except FileNotFoundError:
+            logging.warning("No cache found")
+            return
+        except Exception:
+            logging.warning("Corrupted cache (maybe from another Python version)")
+            return
+        logging.debug("Found cache")
+        if data.get("version") != VERSION:
+            logging.info("Found old cache, ignored it.")
+            return
+        for po_file in cast(List[PoFileStats], data["data"]):
+            if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
+                self.files.add(po_file)
+
+    def _write_cache(self) -> None:
+        """Persists all PoFileStats to disk."""
+        cache_path = self.path / ".potodo" / "cache.pickle"
+        os.makedirs(cache_path.parent, exist_ok=True)
+        data = {"version": VERSION, "data": self.files | self.excluded_files}
+        with NamedTemporaryFile(
+            mode="wb", delete=False, dir=str(cache_path.parent), prefix=cache_path.name
+        ) as tmp:
+            pickle.dump(data, tmp)
+        os.rename(tmp.name, cache_path)
+        logging.debug("Wrote PoDirectory cache to %s", cache_path)
+
+    def fetch_issues(self, api_url):
+        issue_reservations = get_issue_reservations(api_url)
+        for po_file_stats in self.files:
+            reserved_by, reservation_date = issue_reservations.get(
+                po_file_stats.filename_dir.lower(), (None, None)
+            )
+            if reserved_by and reservation_date:
+                po_file_stats.reserved_by = reserved_by
+                po_file_stats.reservation_date = reservation_date
+            else:  # Just in case we remember it's reserved from the cache:
+                po_file_stats.reserved_by = None
+                po_file_stats.reservation_date = None
+
+    @property
+    def translated(self) -> int:
+        """Qty of translated entries in the po files of this directory."""
+        return sum(po_file.translated for po_file in self.files)
+
+    @property
+    def translated_words(self) -> int:
+        """Qty of translated words in the po files of this directory."""
+        return sum(po_file.translated_words for po_file in self.files)
+
+    @property
+    def entries(self) -> int:
+        """Qty of entries in the po files of this directory."""
+        return sum(po_file.entries for po_file in self.files)
+
+    @property
+    def words(self) -> int:
+        """Qty of words in the po files of this directory."""
+        return sum(po_file.words for po_file in self.files)
+
+    @property
+    def completion(self) -> float:
+        """Return % of completion of this directory."""
+        try:
+            return 100 * self.translated_words / self.words
+        except ZeroDivisionError:
+            return 0
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
@@ -183,115 +392,3 @@ class PoDirectoryStats:
         if not isinstance(other, type(self)):
             return False
         return self.path >= other.path
-
-
-class PoProjectStats:
-    """Represents the root of the hierarchy of `.po` files."""
-
-    def __init__(self, path: Path):
-        self.path = path
-        # self.files can be persisted on disk
-        # using `.write_cache()` and `.read_cache()
-        self.files: Set[PoFileStats] = set()
-        self.excluded_files: Set[PoFileStats] = set()
-
-    def filter(self, filter_func: Callable[[PoFileStats], bool]) -> None:
-        """Filter files according to a filter function.
-
-        If filter is applied multiple times, it behave like only last
-        filter has been applied.
-        """
-        all_files = self.files | self.excluded_files
-        self.files = set()
-        self.excluded_files = set()
-        for file in all_files:
-            if filter_func(file):
-                self.files.add(file)
-            else:
-                self.excluded_files.add(file)
-
-    @property
-    def translated(self) -> int:
-        """Qty of translated entries in the po files of this project."""
-        return sum(
-            directory_stats.translated for directory_stats in self.stats_by_directory()
-        )
-
-    @property
-    def translated_words(self) -> int:
-        """Qty of translated words in the po files of this project."""
-        return sum(
-            directory_stats.translated_words
-            for directory_stats in self.stats_by_directory()
-        )
-
-    @property
-    def entries(self) -> int:
-        """Qty of entries in the po files of this project."""
-        return sum(
-            directory_stats.entries for directory_stats in self.stats_by_directory()
-        )
-
-    @property
-    def words(self) -> int:
-        """Qty of words in the po files of this project."""
-        return sum(
-            directory_stats.words for directory_stats in self.stats_by_directory()
-        )
-
-    @property
-    def completion(self) -> float:
-        """Return % of completion of this project."""
-        return 100 * self.translated_words / self.words
-
-    def rescan(self) -> None:
-        """Scan disk to search for po files.
-
-        This is the only function that hit the disk.
-        """
-        for path in list(self.path.rglob("*.po")):
-            if PoFileStats(path) not in self.files:
-                self.files.add(PoFileStats(path))
-
-    def stats_by_directory(self) -> List[PoDirectoryStats]:
-        return [
-            PoDirectoryStats(directory, list(po_files))
-            for directory, po_files in itertools.groupby(
-                sorted(self.files, key=lambda po_file: po_file.path.parent),
-                key=lambda po_file: po_file.path.parent,
-            )
-        ]
-
-    def read_cache(self) -> None:
-        """Restore all PoFileStats from disk.
-
-        While reading the cache, outdated entires are **not** loaded.
-        """
-        cache_path = self.path / ".potodo" / "cache.pickle"
-
-        logging.debug("Trying to load cache from %s", cache_path)
-        try:
-            with open(cache_path, "rb") as handle:
-                data = pickle.load(handle)
-        except FileNotFoundError:
-            logging.warning("No cache found")
-            return
-        logging.debug("Found cache")
-        if data.get("version") != VERSION:
-            logging.info("Found old cache, ignored it.")
-            return
-        for po_file in cast(List[PoFileStats], data["data"]):
-            if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
-                self.files.add(po_file)
-
-    def write_cache(self) -> None:
-        """Persists all PoFileStats to disk."""
-        cache_path = self.path / ".potodo" / "cache.pickle"
-        os.makedirs(cache_path.parent, exist_ok=True)
-        data = {"version": VERSION, "data": self.files | self.excluded_files}
-        with NamedTemporaryFile(
-            mode="wb", delete=False, dir=str(cache_path.parent), prefix=cache_path.name
-        ) as tmp:
-            pickle.dump(data, tmp)
-        os.rename(tmp.name, cache_path)
-        logging.debug("Wrote PoProjectStats cache to %s", cache_path)

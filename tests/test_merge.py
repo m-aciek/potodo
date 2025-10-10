@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -7,10 +8,10 @@ from potodo.merge import sync_po_and_pot
 def test_merges_file_in_main_directory(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
-        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
-        # polib adds an empty metadata https://github.com/izimobil/polib/issues/160 
+        sync_po_and_pot([repo_dir], pots_dir, Path(tmp_dir))
+        # polib adds an empty metadata https://github.com/izimobil/polib/issues/160
         assert (
-            Path(tmp_dir, "file1.po").read_text()
+            Path(tmp_dir, "file1.po").read_text(encoding="UTF-8")
             == """#
 msgid ""
 msgstr ""
@@ -43,9 +44,9 @@ msgstr ""
 def test_merges_a_file_in_a_subdirectory(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
-        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        sync_po_and_pot([repo_dir], pots_dir, Path(tmp_dir))
         assert (
-            Path(tmp_dir, "folder/finished.po").read_text()
+            Path(tmp_dir, "folder/finished.po").read_text(encoding="UTF-8")
             == """#
 msgid ""
 msgstr ""
@@ -60,23 +61,23 @@ msgstr "Incroyablement inutile comme outil, ce potodo"
 def test_skips_po_file_without_pot(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
-        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        sync_po_and_pot([repo_dir], pots_dir, Path(tmp_dir))
         assert not Path(tmp_dir, "file2.po").exists()
 
 
 def test_skips_po_file_without_pot_in_a_subdirectory(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
-        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        sync_po_and_pot([repo_dir], pots_dir, Path(tmp_dir))
         assert not Path(tmp_dir, "folder/file3.po").exists()
 
 
 def test_moves_pot_as_po_when_no_po(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
-        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        sync_po_and_pot([repo_dir], pots_dir, Path(tmp_dir))
         assert (
-            Path(tmp_dir, "file3.po").read_text()
+            Path(tmp_dir, "file3.po").read_text(encoding="UTF-8")
             == """msgid "This string is in source, but not yet in the translation"
 msgstr ""
 """
@@ -86,10 +87,22 @@ msgstr ""
 def test_moves_pot_as_po_when_no_po_in_a_subdirectory(repo_dir):
     pots_dir = repo_dir.parent / "pots"
     with TemporaryDirectory() as tmp_dir:
-        sync_po_and_pot(repo_dir, pots_dir, Path(tmp_dir))
+        sync_po_and_pot([repo_dir], pots_dir, Path(tmp_dir))
         assert (
-            Path(tmp_dir, "folder/file5.po").read_text()
+            Path(tmp_dir, "folder/file5.po").read_text(encoding="UTF-8")
             == """msgid "This string is in source in a subdirectory, but not yet in the translation"
 msgstr ""
 """
         )
+
+
+def test_run_witout_dash_dash_pot(run_potodo, repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    captured = run_potodo([])
+    assert re.search("file1.po  .* 33.0% translated", captured.out)
+
+
+def test_run_with_dash_dash_pot(run_potodo, repo_dir):
+    pots_dir = repo_dir.parent / "pots"
+    captured = run_potodo(["--pot", str(pots_dir)])
+    assert re.search("file1.po  .* 0.0% translated", captured.out)
