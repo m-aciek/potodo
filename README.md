@@ -53,6 +53,14 @@ $ potodo --exclude venv .venv whatsnew c-api/ distutils/
 # TOTAL (50.01% done)
 ```
 
+### Calculate completion with POT files structure
+
+You can calculate the progress against source (template) files by using `--pot` flag.
+
+```
+$ potodo --pot ../cpython/Doc/build/gettext
+```
+
 ### Handling reservations
 
 To avoid having two translators work on the same file at the same
@@ -136,6 +144,8 @@ pip install -e .
 
 ## Release History
 
+* v0.23.2
+  * fix: support CLI for --pot flag by @maciek
 * v0.23.1
   * Raise ValueError for empty or not existent POT directory when --pot flag is used by @maciek
 * v0.23.0

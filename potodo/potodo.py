@@ -1,8 +1,9 @@
 import json
 import logging
+import shutil
 from functools import partial
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 from typing import Callable, List
 
 from gitignore_parser import handle_negation, rule_from_pattern
@@ -109,7 +110,6 @@ def print_po_project_as_json(po_project: PoProjectStats, show_finished: bool) ->
 
 
 def build_ignore_matcher(path: Path, exclude: List[str]) -> Callable[[str], bool]:
-    path = path.resolve()
     potodo_ignore = path / ".potodoignore"
     rules = []
     if potodo_ignore.exists():
@@ -162,22 +162,21 @@ def main() -> None:
         return True
 
     if args.pot:
-        with TemporaryDirectory() as tmpdir:
-            po_project = merge_and_scan_path(
-                args.path,
-                Path(args.pot),
-                hide_reserved=args.hide_reserved,
-                api_url=args.api_url,
-                merge_path=Path(tmpdir),
-            )
-            ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
+        tmpdir = mkdtemp()
+        po_project = merge_and_scan_path(
+            args.path,
+            Path(args.pot),
+            hide_reserved=args.hide_reserved,
+            api_url=args.api_url,
+            merge_path=Path(tmpdir),
+        )
+        ignore_matches = build_ignore_matcher(Path(tmpdir), args.exclude)
 
-            if args.is_interactive:
-                from potodo.interactive import interactive_output
+        if args.is_interactive:
+            from potodo.interactive import interactive_output
 
-                interactive_output(Path(tmpdir), ignore_matches)
-                return
-            po_project.filter(partial(select, ignore_matches))
+            interactive_output(Path(tmpdir), ignore_matches)
+            return
     else:
         if args.is_interactive:
             from potodo.interactive import interactive_output
@@ -187,7 +186,7 @@ def main() -> None:
         po_project = scan_path(
             args.path, args.no_cache, args.hide_reserved, args.api_url
         )
-        po_project.filter(partial(select, ignore_matches))
+    po_project.filter(partial(select, ignore_matches))
     if args.matching_files:
         print_matching_files(po_project, args.show_finished)
     elif args.json_format:
@@ -197,6 +196,8 @@ def main() -> None:
             po_project, args.counts, args.show_reservation_dates, args.show_finished
         )
     po_project.write_cache()
+    if args.pot:
+        shutil.rmtree(tmpdir)
 
 
 def merge_and_scan_path(

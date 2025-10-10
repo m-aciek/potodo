@@ -48,6 +48,11 @@ class PoFileStats:
         return self.stats["translated"]
 
     @property
+    def translated_words(self) -> int:
+        self.parse()
+        return self.stats["translated_words"]
+
+    @property
     def untranslated(self) -> int:
         self.parse()
         return self.stats["untranslated"]
@@ -58,6 +63,11 @@ class PoFileStats:
         return self.stats["entries"]
 
     @property
+    def words(self) -> int:
+        self.parse()
+        return self.stats["words"]
+
+    @property
     def percent_translated(self) -> int:
         self.parse()
         return self.stats["percent_translated"]
@@ -65,15 +75,21 @@ class PoFileStats:
     def parse(self) -> None:
         if self.stats:
             return  # Stats already computed.
-        pofile = polib.pofile(str(self.path))
+        pofile = polib.pofile(self.path)
         self.stats = {
             "fuzzy": len(
                 [entry for entry in pofile if entry.fuzzy and not entry.obsolete]
             ),
             "percent_translated": pofile.percent_translated(),
             "entries": len([e for e in pofile if not e.obsolete]),
+            # TODO: use pofile.total_words() when https://github.com/izimobil/polib/pull/166 is merged
+            "words": sum([len(e.msgid.split()) for e in pofile if not e.obsolete]),
             "untranslated": len(pofile.untranslated_entries()),
             "translated": len(pofile.translated_entries()),
+            # TODO: use pofile.translated_words() when https://github.com/izimobil/polib/pull/166 is merged
+            "translated_words": sum(
+                [len(e.msgid.split()) for e in pofile.translated_entries()]
+            ),
         }
 
     def __repr__(self) -> str:
@@ -126,14 +142,24 @@ class PoDirectoryStats:
         return sum(po_file.translated for po_file in self.files_stats)
 
     @property
+    def translated_words(self) -> int:
+        """Qty of translated words in the po files of this directory."""
+        return sum(po_file.translated_words for po_file in self.files_stats)
+
+    @property
     def entries(self) -> int:
         """Qty of entries in the po files of this directory."""
         return sum(po_file.entries for po_file in self.files_stats)
 
     @property
+    def words(self) -> int:
+        """Qty of words in the po files of this directory."""
+        return sum(po_file.words for po_file in self.files_stats)
+
+    @property
     def completion(self) -> float:
         """Return % of completion of this directory."""
-        return 100 * self.translated / self.entries
+        return 100 * self.translated_words / self.words
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self)) and self.path == other.path
@@ -186,22 +212,37 @@ class PoProjectStats:
 
     @property
     def translated(self) -> int:
-        """Qty of translated entries in the po files of this directory."""
+        """Qty of translated entries in the po files of this project."""
         return sum(
             directory_stats.translated for directory_stats in self.stats_by_directory()
         )
 
     @property
+    def translated_words(self) -> int:
+        """Qty of translated words in the po files of this project."""
+        return sum(
+            directory_stats.translated_words
+            for directory_stats in self.stats_by_directory()
+        )
+
+    @property
     def entries(self) -> int:
-        """Qty of entries in the po files of this directory."""
+        """Qty of entries in the po files of this project."""
         return sum(
             directory_stats.entries for directory_stats in self.stats_by_directory()
         )
 
     @property
+    def words(self) -> int:
+        """Qty of words in the po files of this project."""
+        return sum(
+            directory_stats.words for directory_stats in self.stats_by_directory()
+        )
+
+    @property
     def completion(self) -> float:
         """Return % of completion of this project."""
-        return 100 * self.translated / self.entries
+        return 100 * self.translated_words / self.words
 
     def rescan(self) -> None:
         """Scan disk to search for po files.

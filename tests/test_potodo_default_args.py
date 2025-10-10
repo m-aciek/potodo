@@ -1,14 +1,15 @@
 def test_potodo_no_args(run_potodo):
     output = run_potodo([]).out
-    assert "# excluded (50.00% done)" in output
-    assert "# folder (50.00% done)" in output
+    assert "# excluded (75.00% done)" in output
+    assert "# folder (58.82% done)" in output
     assert "- excluded.po                      1 /   2 ( 50.0% translated)" in output
     assert "- file3.po                         0 /   1 (  0.0% translated)" in output
-    assert "# repository (25.00% done)" in output
+    assert "# repository (21.74% done)" in output
     assert (
         "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
         in output
     )
+    assert "# TOTAL (40.91% done)" in output
 
 
 def test_potodo_exclude(run_potodo):
@@ -19,7 +20,7 @@ def test_potodo_exclude(run_potodo):
     assert (
         "- excluded.po                      1 /   2 ( 50.0% translated)" not in output
     )
-    assert "# repository (25.00% done)" in output
+    assert "# repository (21.74% done)" in output
     assert (
         "- file1.po                         1 /   3 ( 33.0% translated), 1 fuzzy"
         in output
@@ -30,7 +31,7 @@ def test_potodo_show_finished(run_potodo):
     output = run_potodo(["--show-finished"]).out
     output_short = run_potodo(["-s"]).out
     assert output == output_short
-    assert "# folder (50.00% done)" in output
+    assert "# folder (58.82% done)" in output
     assert "- excluded.po                      1 /   2 ( 50.0% translated)" in output
     assert "- file3.po                         0 /   1 (  0.0% translated)" in output
     assert "- finished.po                      1 /   1 (100.0% translated)" in output
@@ -81,7 +82,7 @@ def test_potodo_counts(run_potodo):
         "- excluded.po                      1 /   2 ( 50.0% translated)" not in output
     )
     assert "- file4.po                         1 to do" in output
-    assert "# repository (25.00% done)" in output
+    assert "# repository (21.74% done)" in output
     assert "- file1.po                         2 to do, 1 fuzzy." in output
 
 
