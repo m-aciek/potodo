@@ -42,7 +42,7 @@ def get_issue_reservations(api_url: str) -> Dict[str, Tuple[Any, Any]]:
 
     for issue in issues:
         # PR are also issues, but issues are not always PRs
-        is_pull_request = issue["pull_request"] is not None
+        is_pull_request = issue.get("pull_request") is not None
         if is_pull_request:
             number = issue["number"]
             pr_api_url = f"{api_uri_base}/pulls/{number}/files"
