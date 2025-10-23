@@ -338,8 +338,11 @@ class PoDirectory:
             logging.info("Found old cache, ignored it.")
             return
         for po_file in cast(List[PoFileStats], data["data"]):
-            if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
-                self.files.add(po_file)
+            try:
+                if os.path.getmtime(po_file.path.resolve()) == po_file.mtime:
+                    self.files.add(po_file)
+            except FileNotFoundError:
+                pass  # The file is in the cache but no longer on the filesystem.
 
     def _write_cache(self) -> None:
         """Persists all PoFileStats to disk."""
