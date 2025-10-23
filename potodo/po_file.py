@@ -147,6 +147,15 @@ class PoDirectories(list):
             self.append(directory)
         return self
 
+    def as_dict(self):
+        """Used by json serialisation."""
+        return {
+            "percent_translated": self.completion,
+            "directories": [
+                po_directory.as_dict() for po_directory in self.subdirectories
+            ],
+        }
+
     def fetch_issues(self, api_url) -> None:
         for directory in self:
             directory.fetch_issues(api_url)
@@ -198,6 +207,20 @@ class PoDirectory:
         self.excluded_files: Set[PoFileStats] = set()
         self.use_cache = use_cache
         self.ignore_matcher: Callable[[str], bool] | None = None
+
+    def __repr__(self):
+        return f"<PoDirectory with {len(self.files)} files>"
+
+    def as_dict(self):
+        """Used by json serialisation."""
+        return {
+            "name": self.path.name,
+            "percent_translated": self.completion,
+            "files": [po_file.as_dict() for po_file in sorted(self.files)],
+            "directories": [
+                po_directory.as_dict() for po_directory in self.subdirectories
+            ],
+        }
 
     def _parse_potodoignore(self, exclude: List[str]) -> Callable[[str], bool]:
         rules = []

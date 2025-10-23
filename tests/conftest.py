@@ -11,6 +11,11 @@ def _repo_dir():
     return Path(__file__).resolve().parent / "fixtures" / "repository"
 
 
+@pytest.fixture(name="git_repo_dir")
+def _git_repo_dir():
+    return Path(__file__).resolve().parent / "fixtures" / "git_repository"
+
+
 @pytest.fixture
 def run_potodo(repo_dir, capsys, monkeypatch):
     def run_it(argv):

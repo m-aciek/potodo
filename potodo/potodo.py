@@ -74,24 +74,24 @@ def print_po_project(
     return None
 
 
+def remove_finished_from_tree(tree):
+    if "files" in tree:
+        tree["files"] = [
+            file for file in tree["files"] if file["percent_translated"] != 100
+        ]
+    for po_directory in tree["directories"]:
+        remove_finished_from_tree(po_directory)
+
+
 def print_po_project_as_json(
     po_directories: PoDirectories, show_finished: bool
 ) -> None:
+    tree = po_directories.as_dict()
+    if not show_finished:
+        remove_finished_from_tree(tree)
     print(
         json.dumps(
-            [
-                {
-                    "name": f"{sub_directory.path.name}/",
-                    "percent_translated": sub_directory.completion,
-                    "files": [
-                        po_file.as_dict()
-                        for po_file in sorted(sub_directory.files)
-                        if show_finished or po_file.percent_translated < 100
-                    ],
-                }
-                for po_directory in po_directories
-                for sub_directory in sorted(po_directory.subdirectories)
-            ],
+            tree,
             indent=4,
             separators=(",", ": "),
             sort_keys=False,

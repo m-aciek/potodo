@@ -2,11 +2,8 @@ from pathlib import Path
 
 from potodo.potodo import main
 
-REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "repository"
-GIT_REPO_DIR = Path(__file__).resolve().parent / "fixtures" / "git_repository"
 
-
-def test_git(capsys, monkeypatch):
+def test_git(capsys, monkeypatch, git_repo_dir):
     """Ensure than excluded files are **not** parsed.
 
     Parsing excluded files can lead to surprises, here, parsing a
@@ -16,7 +13,7 @@ def test_git(capsys, monkeypatch):
     I name it dotgit instead of .git, to not scare git.
     """
     monkeypatch.setattr(
-        "sys.argv", ["potodo", "-p", str(GIT_REPO_DIR), "--exclude", "dotgit/"]
+        "sys.argv", ["potodo", "-p", str(git_repo_dir), "--exclude", "dotgit/"]
     )
     main()
     out, err = capsys.readouterr()
@@ -24,8 +21,8 @@ def test_git(capsys, monkeypatch):
     assert "file1" in out
 
 
-def test_no_exclude(capsys, monkeypatch):
-    monkeypatch.setattr("sys.argv", ["potodo", "-p", str(REPO_DIR)])
+def test_no_exclude(capsys, monkeypatch, repo_dir):
+    monkeypatch.setattr("sys.argv", ["potodo", "-p", str(repo_dir)])
     main()
     out, err = capsys.readouterr()
     assert not err
@@ -34,9 +31,9 @@ def test_no_exclude(capsys, monkeypatch):
     assert "file3" in out
 
 
-def test_exclude_file(capsys, monkeypatch):
+def test_exclude_file(capsys, monkeypatch, repo_dir):
     monkeypatch.setattr(
-        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "file*"]
+        "sys.argv", ["potodo", "-p", str(repo_dir), "--exclude", "file*"]
     )
     main()
     out, err = capsys.readouterr()
@@ -47,9 +44,9 @@ def test_exclude_file(capsys, monkeypatch):
     assert "excluded" in out  # The only one not being named file
 
 
-def test_exclude_directory(capsys, monkeypatch):
+def test_exclude_directory(capsys, monkeypatch, repo_dir):
     monkeypatch.setattr(
-        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "excluded/*"]
+        "sys.argv", ["potodo", "-p", str(repo_dir), "--exclude", "excluded/*"]
     )
     main()
     out, err = capsys.readouterr()
@@ -61,9 +58,9 @@ def test_exclude_directory(capsys, monkeypatch):
     assert "excluded/" not in out
 
 
-def test_exclude_single_file(capsys, monkeypatch):
+def test_exclude_single_file(capsys, monkeypatch, repo_dir):
     monkeypatch.setattr(
-        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "file2.po"]
+        "sys.argv", ["potodo", "-p", str(repo_dir), "--exclude", "file2.po"]
     )
     main()
     out, err = capsys.readouterr()
@@ -74,9 +71,9 @@ def test_exclude_single_file(capsys, monkeypatch):
     assert "file4" in out
 
 
-def test_negation(capsys, monkeypatch):
+def test_negation(capsys, monkeypatch, repo_dir):
     monkeypatch.setattr(
-        "sys.argv", ["potodo", "-p", str(REPO_DIR), "--exclude", "file*", "!file2.po"]
+        "sys.argv", ["potodo", "-p", str(repo_dir), "--exclude", "file*", "!file2.po"]
     )
     main()
     out, err = capsys.readouterr()
