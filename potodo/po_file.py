@@ -86,13 +86,13 @@ class PoFileStats:
             ),
             "percent_translated": pofile.percent_translated(),
             "entries": len([e for e in pofile if not e.obsolete]),
-            # TODO: use pofile.total_words() when
-            #       https://github.com/izimobil/polib/pull/166 is merged
+            # use pofile.total_words() when
+            # https://github.com/izimobil/polib/pull/166 is merged
             "words": sum(len(e.msgid.split()) for e in pofile if not e.obsolete),
             "untranslated": len(pofile.untranslated_entries()),
             "translated": len(pofile.translated_entries()),
-            # TODO: use pofile.translated_words() when
-            #       https://github.com/izimobil/polib/pull/166 is merged
+            # use pofile.translated_words() when
+            # https://github.com/izimobil/polib/pull/166 is merged
             "translated_words": sum(
                 len(e.msgid.split()) for e in pofile.translated_entries()
             ),
@@ -135,7 +135,8 @@ class PoFileStats:
 class PoDirectories(list):
     """Collection of PoDirectory.
 
-    Each PoDirectory can represent a hiearchy that have no common parent with the others.
+    Each PoDirectory can represent a hiearchy that have no common
+    parent with the others.
     """
 
     @classmethod
@@ -329,7 +330,7 @@ class PoDirectory:
         except FileNotFoundError:
             logging.warning("No cache found")
             return
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             logging.warning("Corrupted cache (maybe from another Python version)")
             return
         logging.debug("Found cache")

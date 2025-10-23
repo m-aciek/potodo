@@ -89,5 +89,6 @@ def test_potodo_matching_files_fuzzy(run_potodo):
     assert "file1.po" in output
 
 
-# TODO: Test hide_reserved, offline options, only_reserved, exclude_reserved, show_reservation_dates
-# TODO: Test verbose output levels
+# Missing tests: Test hide_reserved, offline options, only_reserved,
+# exclude_reserved, show_reservation_dates, Test verbose
+# output levels

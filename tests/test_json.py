@@ -8,9 +8,9 @@ def test_json_output(capsys, monkeypatch, repo_dir):
         "sys.argv", ["potodo", "--json", "-p", str(repo_dir / "folder")]
     )
     main()
-    out, err = capsys.readouterr()
-    print(out)
-    assert len(out) > 4
+    out, _err = capsys.readouterr()
+    assert "folder/excluded" in out
+    assert "folder/file3" in out
 
 
 def test_json_exclude_output(run_potodo, repo_dir):

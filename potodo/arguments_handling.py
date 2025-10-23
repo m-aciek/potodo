@@ -11,6 +11,8 @@ from potodo import __version__
 
 @dataclass
 class Filters:
+    """Store the filtering argument of potodo."""
+
     only_fuzzy: bool
     exclude_fuzzy: bool
     above: float

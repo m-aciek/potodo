@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from potodo.potodo import main
 
 

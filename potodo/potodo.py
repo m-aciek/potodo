@@ -71,7 +71,6 @@ def print_po_project(
         print_po_project(
             directory, counts, show_reservation_dates, show_finished, prefix, last_one
         )
-    return None
 
 
 def remove_finished_from_tree(tree):

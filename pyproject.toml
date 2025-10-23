@@ -52,6 +52,9 @@ dev = [
     "pylint",
 ]
 
+[tool.isort]
+profile = "black"
+
 [tool.pylint]
 disable = [
     "missing-function-docstring",
@@ -112,4 +115,4 @@ commands = [["pylint", "potodo/", "tests/"]]
 
 [tool.tox.env.isort]
 deps = ["isort"]
-commands = [["isort", "--check", "--profile=black", "potodo/", "tests/"]]
+commands = [["isort", "--check", "potodo/", "tests/"]]
