@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import pickle
+from functools import cached_property
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Optional, Set, cast
@@ -296,7 +297,7 @@ class PoDirectory:
         if self.use_cache:
             self._write_cache()
 
-    @property
+    @cached_property
     def subdirectories(self) -> list[PoDirectory]:
         subdirectories = [
             PoDirectory(dir, use_cache=self.use_cache)
