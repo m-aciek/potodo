@@ -51,7 +51,7 @@ def print_po_project(
         if show_finished or file.percent_translated != 100
     ]
     for i, file_stat in enumerate(sorted(files_to_display)):
-        last_one = i == len(po_directory.immediate_files) - 1
+        last_one = i == len(files_to_display) - 1
         has_folders = len(po_directory.subdirectories)
         line = ""
         if counts:
