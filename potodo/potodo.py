@@ -4,6 +4,8 @@ import shutil
 from pathlib import Path
 from tempfile import mkdtemp
 
+from colorama import Fore, Style, just_fix_windows_console
+
 from potodo.arguments_handling import parse_args
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
@@ -27,6 +29,7 @@ def print_po_project(
     prefix: str = "",
     last_one=False,
 ) -> None:
+    just_fix_windows_console()
     if not po_directory.subdirectories and not po_directory.immediate_files:
         return
     if isinstance(po_directory, PoDirectories):
@@ -41,7 +44,7 @@ def print_po_project(
         print(
             prefix
             + ("├── " if not last_one else "└── ")
-            + f"{po_directory.path.name}/  {po_directory.completion:.2f}% done"
+            + f"{Fore.BLUE}{Style.BRIGHT}{po_directory.path.name}/{Style.RESET_ALL}  {po_directory.completion:.2f}% done"
         )
         prefix += "    " if last_one else "│   "
 
