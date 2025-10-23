@@ -6,14 +6,19 @@ import pytest
 from potodo.potodo import main
 
 
+@pytest.fixture(name="fixtures_dir")
+def _fixtures_dir():
+    return Path(__file__).resolve().parent / "fixtures"
+
+
 @pytest.fixture(name="repo_dir")
-def _repo_dir():
-    return Path(__file__).resolve().parent / "fixtures" / "repository"
+def _repo_dir(fixtures_dir):
+    return fixtures_dir / "repository"
 
 
 @pytest.fixture(name="git_repo_dir")
-def _git_repo_dir():
-    return Path(__file__).resolve().parent / "fixtures" / "git_repository"
+def _git_repo_dir(fixtures_dir):
+    return fixtures_dir / "git_repository"
 
 
 @pytest.fixture
