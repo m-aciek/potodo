@@ -234,11 +234,11 @@ class PoDirectory:
         rules.append(rule_from_pattern(".git/", self.path))
         for rule in exclude:
             rules.append(rule_from_pattern(rule, self.path))
-        if not any(r.negation for r in rules):
-            return lambda file_path: any(r.match(file_path) for r in rules)
-        # We have negation rules. We can't use a simple "any" to evaluate them.
-        # Later rules override earlier rules.
-        return lambda file_path: handle_negation(file_path, rules)
+        if any(r.negation for r in rules):
+            # We have negation rules. We can't use a simple "any" to evaluate them.
+            # Later rules override earlier rules.
+            return lambda file_path: handle_negation(file_path, rules)
+        return lambda file_path: any(r.match(file_path) for r in rules)
 
     def _select(self, po_file: PoFileStats, filters: Filters) -> bool:
         """Return True if the po_file should be displayed, False otherwise."""
