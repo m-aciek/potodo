@@ -5,6 +5,8 @@ from potodo.forge_api import get_issue_reservations
 
 
 class ResponseWithoutPullRequestProperty:
+    """Mock response, mimicking github."""
+
     status_code = 200
     links = {}
 
