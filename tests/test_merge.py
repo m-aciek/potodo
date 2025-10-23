@@ -96,7 +96,7 @@ msgstr ""
         )
 
 
-def test_run_witout_dash_dash_pot(run_potodo, repo_dir):
+def test_run_without_dash_dash_pot(run_potodo, repo_dir):
     pots_dir = repo_dir.parent / "pots"
     captured = run_potodo([])
     assert re.search("file1.po  .* 33.0% translated", captured.out)
