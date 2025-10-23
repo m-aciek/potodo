@@ -304,11 +304,12 @@ class PoDirectory:
             if dir.is_dir() and not dir.name.startswith(".")
         ]
         for subdirectory in subdirectories:
-            files = [file for file in subdirectory.path.iterdir() if file.is_file()]
             subdirectory.files = set(
-                po_file for po_file in self.files if po_file.path in files
+                file
+                for file in self.files
+                if file.path.is_relative_to(subdirectory.path)
             )
-        return subdirectories
+        return [subdirectory for subdirectory in subdirectories if subdirectory.files]
 
     @property
     def immediate_files(self) -> set[PoFileStats]:
