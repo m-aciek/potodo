@@ -22,7 +22,7 @@ class Filters:
 
 
 def handle_dash_p_compat(args: argparse.Namespace) -> None:
-    """Could be remonved in like 2028.
+    """Could be removed in like 2028.
 
     potodo had no position parameters, and I always forgot to type
     `-p` to give a path. So now potodo accepts paths as positional
@@ -31,11 +31,12 @@ def handle_dash_p_compat(args: argparse.Namespace) -> None:
 
     if args.old_paths:
         print(
-            "🍰 hint: using -p to invoke potodo became optional in potodo 0.3.",
+            "🍰 hint: using -p to invoke potodo became optional in potodo 0.3.\n"
+            "         (and may be removed in the future)",
             file=sys.stderr,
         )
-        print("         (and may be removed in the future)", file=sys.stderr)
     args.paths = args.old_paths + args.paths
+    del args.old_paths
 
 
 def parse_args() -> argparse.Namespace:
@@ -56,7 +57,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "paths",
-        help="Examine files in the given path",
+        help="Examine files in given path(s)",
         nargs="*",
         metavar="path",
     )
@@ -263,7 +264,7 @@ def check_args(args: Namespace) -> None:
         sys.exit(1)
 
     # If no path is specified, use current directory
-    if not args.paths and not args.old_paths:
+    if not args.paths:
         args.paths = [os.getcwd()]
 
     args.paths = [Path(path).resolve() for path in args.paths]
