@@ -21,6 +21,24 @@ class Filters:
     exclude_reserved: bool
 
 
+def handle_dash_p_compat(args: argparse.Namespace) -> None:
+    """Could be removed in like 2028.
+
+    potodo had no position parameters, and I always forgot to type
+    `-p` to give a path. So now potodo accepts paths as positional
+    arguments :]
+    """
+
+    if args.old_paths:
+        print(
+            "🍰 hint: using -p to invoke potodo became optional in potodo 0.3.\n"
+            "         (and may be removed in the future)",
+            file=sys.stderr,
+        )
+    args.paths = args.old_paths + args.paths
+    del args.old_paths
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="potodo",
@@ -34,7 +52,14 @@ def parse_args() -> argparse.Namespace:
         metavar="path",
         action="append",
         default=[],
-        dest="paths",
+        dest="old_paths",
+    )
+
+    parser.add_argument(
+        "paths",
+        help="Examine files in given path(s)",
+        nargs="*",
+        metavar="path",
     )
 
     parser.add_argument(
@@ -189,6 +214,7 @@ def parse_args() -> argparse.Namespace:
 
     # Initialize args and check consistency
     args = parser.parse_args()
+    handle_dash_p_compat(args)
     check_args(args)
 
     args.filters = Filters(
