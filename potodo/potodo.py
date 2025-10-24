@@ -4,6 +4,9 @@ import shutil
 from pathlib import Path
 from tempfile import mkdtemp
 
+import colorama
+from colorama import Fore, Style
+
 from potodo.arguments_handling import parse_args
 from potodo.json import json_dateconv
 from potodo.logging import setup_logging
@@ -19,7 +22,7 @@ def print_matching_files(po_directories: PoDirectories, show_finished: bool) -> 
             print(po_file.path)
 
 
-def print_po_project(
+def _print_po_project(
     po_directory: PoDirectories | PoDirectory,
     counts: bool,
     show_reservation_dates: bool,
@@ -41,7 +44,8 @@ def print_po_project(
         print(
             prefix
             + ("├── " if not last_one else "└── ")
-            + f"{po_directory.path.name}/  {po_directory.completion:.2f}% done"
+            + f"{Fore.BLUE}{Style.BRIGHT}{po_directory.path.name}/{Style.RESET_ALL}"
+            f"  {po_directory.completion:.2f}% done"
         )
         prefix += "    " if last_one else "│   "
 
@@ -68,9 +72,24 @@ def print_po_project(
 
     for i, directory in enumerate(po_directory.subdirectories):
         last_one = i == len(po_directory.subdirectories) - 1
-        print_po_project(
+        _print_po_project(
             directory, counts, show_reservation_dates, show_finished, prefix, last_one
         )
+
+
+def print_po_project(
+    po_directory: PoDirectories | PoDirectory,
+    counts: bool,
+    show_reservation_dates: bool,
+    show_finished: bool,
+    no_color: bool,
+) -> None:
+    if no_color:
+        colorama.init(strip=True)
+    else:
+        colorama.init()
+    _print_po_project(po_directory, counts, show_reservation_dates, show_finished)
+    colorama.deinit()
 
 
 def remove_finished_from_tree(tree):
@@ -106,7 +125,6 @@ def main() -> None:
 
     logging.info("Logging activated.")
     logging.debug("Executing potodo with args %s", args)
-
     if args.pot:
         tmpdir = mkdtemp()
         po_directories = merge_and_scan_paths(
@@ -136,7 +154,11 @@ def main() -> None:
         print_po_project_as_json(po_directories, args.show_finished)
     else:
         print_po_project(
-            po_directories, args.counts, args.show_reservation_dates, args.show_finished
+            po_directories,
+            args.counts,
+            args.show_reservation_dates,
+            args.show_finished,
+            args.no_color,
         )
     if args.pot:
         shutil.rmtree(tmpdir)

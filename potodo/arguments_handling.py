@@ -47,6 +47,12 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable colored output.",
+    )
+
+    parser.add_argument(
         "-a",
         "--above",
         default=0,
