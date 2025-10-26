@@ -33,7 +33,6 @@ class PoFileStats:
         self.directory: str = self.path.parent.name
         self.reserved_by: Optional[str] = None
         self.reservation_date: Optional[str] = None
-        self.filename_dir: str = self.directory + "/" + self.filename
         self.stats: Dict[str, int] = {}
 
     def __eq__(self, other: object) -> bool:
@@ -362,7 +361,7 @@ class PoDirectory:
         issue_reservations = get_issue_reservations(api_url)
         for po_file_stats in self.files:
             reserved_by, reservation_date = issue_reservations.get(
-                po_file_stats.filename_dir.lower(), (None, None)
+                str(po_file_stats.path.relative_to(self.path)).lower(), (None, None)
             )
             if reserved_by and reservation_date:
                 po_file_stats.reserved_by = reserved_by
