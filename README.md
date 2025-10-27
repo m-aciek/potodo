@@ -159,6 +159,8 @@ pre-commit install
 
 ## Release History
 
+* v0.31
+  * fix: reservation for file at the root directory were never displayed.
 * v0.30
   * Subdirectories are now listed in a colored tree-like fashion.
   * Now accepts multiple directories (`-p` flag is now deprecated).
