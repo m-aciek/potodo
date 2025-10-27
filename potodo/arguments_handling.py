@@ -31,7 +31,7 @@ def handle_dash_p_compat(args: argparse.Namespace) -> None:
 
     if args.old_paths:
         print(
-            "🍰 hint: using -p to invoke potodo became optional in potodo 0.3.\n"
+            "🍰 hint: using -p to invoke potodo became optional in potodo 0.30.\n"
             "         (and may be removed in the future)",
             file=sys.stderr,
         )
