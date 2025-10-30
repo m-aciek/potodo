@@ -70,7 +70,7 @@ def _print_po_project(
         mark = "└── " if last_one and not has_folders else "├── "
         print(f"{prefix + mark + file_stat.filename:<40} " + line)
 
-    for i, directory in enumerate(po_directory.subdirectories):
+    for i, directory in enumerate(sorted(po_directory.subdirectories)):
         last_one = i == len(po_directory.subdirectories) - 1
         _print_po_project(
             directory, counts, show_reservation_dates, show_finished, prefix, last_one
