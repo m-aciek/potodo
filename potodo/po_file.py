@@ -225,15 +225,17 @@ class PoDirectory:
 
     def _parse_potodoignore(self, exclude: List[str]) -> Callable[[str], bool]:
         rules = []
+        # Resolve self.path to absolute path to ensure compatibility with gitignore_parser
+        base_path = self.path.resolve()
         potodo_ignore = self.path / ".potodoignore"
         if potodo_ignore.exists():
             for line in potodo_ignore.read_text().splitlines():
-                rule = rule_from_pattern(line, self.path)
+                rule = rule_from_pattern(line, base_path)
                 if rule:
                     rules.append(rule)
-        rules.append(rule_from_pattern(".git/", self.path))
+        rules.append(rule_from_pattern(".git/", base_path))
         for rule in exclude:
-            rules.append(rule_from_pattern(rule, self.path))
+            rules.append(rule_from_pattern(rule, base_path))
         if any(r.negation for r in rules):
             # We have negation rules. We can't use a simple "any" to evaluate them.
             # Later rules override earlier rules.
@@ -244,7 +246,8 @@ class PoDirectory:
         """Return True if the po_file should be displayed, False otherwise."""
         assert self.ignore_matcher
 
-        if self.ignore_matcher(str(po_file.path)):
+        # Resolve to absolute path to match the base_path used in rules
+        if self.ignore_matcher(str(po_file.path.resolve())):
             return False
         if filters.only_fuzzy and not po_file.fuzzy:
             return False
