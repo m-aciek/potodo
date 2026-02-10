@@ -3,8 +3,6 @@
 This test ensures that the ValueError:
   'X is not in the subpath of Y'
 does not occur when using relative paths with the Python API.
-
-See: https://github.com/m-aciek/potodo/issues/XXX
 """
 import os
 from pathlib import Path
